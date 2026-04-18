@@ -1,16 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PrivateRoute } from "@/components/PrivateRoute";
+import { AppShell } from "@/components/AppShell";
+import { PageHeader } from "@/components/PageHeader";
 
 export const Route = createFileRoute("/clientes/$id")({
-  head: () => ({ meta: [{ title: "Detalhes do cliente — ZapCobrança" }] }),
+  head: () => ({ meta: [{ title: "Cliente — ZapCobrança" }] }),
   component: ClienteDetalhes,
 });
 
 function ClienteDetalhes() {
   const { id } = Route.useParams();
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold">Cliente {id}</h1>
-      <p className="text-muted-foreground mt-2">Em breve.</p>
-    </div>
+    <PrivateRoute>
+      <AppShell title="Detalhes do cliente">
+        <PageHeader
+          title="Detalhes do cliente"
+          subtitle={`ID: ${id}`}
+        />
+        <div className="bg-card rounded-xl border p-6">
+          <p className="text-sm text-muted-foreground">Em breve.</p>
+        </div>
+      </AppShell>
+    </PrivateRoute>
   );
 }
