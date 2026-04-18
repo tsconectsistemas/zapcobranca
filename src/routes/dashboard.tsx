@@ -1,57 +1,104 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Users, AlertTriangle, XCircle, Wallet } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { PrivateRoute } from "@/components/PrivateRoute";
-import { Logo } from "@/components/Logo";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { AppShell } from "@/components/AppShell";
+import { PageHeader } from "@/components/PageHeader";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — ZapCobrança" }] }),
+  head: () => ({
+    meta: [
+      { title: "Início — ZapCobrança" },
+      {
+        name: "description",
+        content: "Painel com métricas das suas cobranças e clientes IPTV.",
+      },
+    ],
+  }),
   component: DashboardPage,
 });
 
 function DashboardPage() {
   return (
     <PrivateRoute>
-      <DashboardContent />
+      <AppShell title="Início">
+        <PageHeader
+          title="Visão geral"
+          subtitle="Acompanhe o status da sua revenda em tempo real."
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <MetricCard
+            label="Clientes ativos"
+            value="0"
+            icon={Users}
+            tone="success"
+          />
+          <MetricCard
+            label="Vencendo hoje"
+            value="0"
+            icon={AlertTriangle}
+            tone="warning"
+          />
+          <MetricCard
+            label="Inadimplentes"
+            value="0"
+            icon={XCircle}
+            tone="destructive"
+          />
+          <MetricCard
+            label="Receita do mês"
+            value="R$ 0,00"
+            icon={Wallet}
+            tone="info"
+          />
+        </div>
+
+        <div className="mt-6 bg-card rounded-xl border p-6">
+          <p className="text-sm text-muted-foreground">
+            Os dados em tempo real aparecerão aqui assim que você cadastrar
+            clientes e configurar suas integrações.
+          </p>
+        </div>
+      </AppShell>
     </PrivateRoute>
   );
 }
 
-function DashboardContent() {
-  const { tenant, user, signOut } = useAuth();
+interface MetricCardProps {
+  label: string;
+  value: string;
+  icon: LucideIcon;
+  tone: "success" | "warning" | "destructive" | "info";
+}
+
+function MetricCard({ label, value, icon: Icon, tone }: MetricCardProps) {
+  const toneStyles: Record<MetricCardProps["tone"], string> = {
+    success: "bg-accent text-primary",
+    warning: "bg-warning/15 text-warning-foreground",
+    destructive: "bg-destructive/10 text-destructive",
+    info: "bg-secondary/10 text-secondary",
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-card border-b">
-        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-3">
-          <Logo size="sm" />
-          <Button variant="outline" size="sm" onClick={signOut}>
-            Sair
-          </Button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-4 py-6 space-y-4">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            Olá, {tenant?.company_name ?? "revenda"} 👋
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {user?.email} · plano{" "}
-            <span className="font-medium text-foreground">
-              {tenant?.plan ?? "free"}
-            </span>{" "}
-            · limite de {tenant?.max_customers ?? 50} clientes
+    <div className="bg-card rounded-xl border p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+            {value}
           </p>
         </div>
-
-        <div className="bg-card rounded-xl border p-6">
-          <p className="text-muted-foreground">
-            Painel em construção. Em breve você verá métricas de cobranças e
-            clientes aqui.
-          </p>
+        <div
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+            toneStyles[tone]
+          )}
+        >
+          <Icon className="h-5 w-5" />
         </div>
-      </main>
+      </div>
     </div>
   );
 }
