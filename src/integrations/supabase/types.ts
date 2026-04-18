@@ -196,17 +196,50 @@ export type Database = {
           },
         ]
       }
-      tenants: {
+      tenant_secrets: {
         Row: {
-          active: boolean | null
           asaas_api_key: string | null
           asaas_environment: string | null
-          company_name: string
-          created_at: string | null
-          email: string
           evolution_api_key: string | null
           evolution_api_url: string | null
           evolution_instance: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          asaas_api_key?: string | null
+          asaas_environment?: string | null
+          evolution_api_key?: string | null
+          evolution_api_url?: string | null
+          evolution_instance?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          asaas_api_key?: string | null
+          asaas_environment?: string | null
+          evolution_api_key?: string | null
+          evolution_api_url?: string | null
+          evolution_instance?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_secrets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          active: boolean | null
+          company_name: string
+          created_at: string | null
+          email: string
           id: string
           max_customers: number | null
           plan: string | null
@@ -216,14 +249,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
-          asaas_api_key?: string | null
-          asaas_environment?: string | null
           company_name: string
           created_at?: string | null
           email: string
-          evolution_api_key?: string | null
-          evolution_api_url?: string | null
-          evolution_instance?: string | null
           id?: string
           max_customers?: number | null
           plan?: string | null
@@ -233,14 +261,9 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
-          asaas_api_key?: string | null
-          asaas_environment?: string | null
           company_name?: string
           created_at?: string | null
           email?: string
-          evolution_api_key?: string | null
-          evolution_api_url?: string | null
-          evolution_instance?: string | null
           id?: string
           max_customers?: number | null
           plan?: string | null
@@ -304,6 +327,36 @@ export type Database = {
           pix_emv_payload: string
           plan: string
         }[]
+      }
+      get_tenant_secrets: {
+        Args: { _tenant_id: string }
+        Returns: {
+          asaas_api_key: string
+          asaas_environment: string
+          evolution_api_key: string
+          evolution_api_url: string
+          evolution_instance: string
+        }[]
+      }
+      get_tenant_secrets_status: {
+        Args: never
+        Returns: {
+          asaas_environment: string
+          has_asaas_key: boolean
+          has_evolution_instance: boolean
+          has_evolution_key: boolean
+          has_evolution_url: boolean
+        }[]
+      }
+      update_tenant_secrets: {
+        Args: {
+          _asaas_api_key?: string
+          _asaas_environment?: string
+          _evolution_api_key?: string
+          _evolution_api_url?: string
+          _evolution_instance?: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
