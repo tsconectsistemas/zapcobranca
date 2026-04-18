@@ -14,13 +14,297 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          created_at: string | null
+          expiration_date: string | null
+          id: string
+          iptv_created_at: string | null
+          last_access: string | null
+          monthly_value: number | null
+          name: string | null
+          notes: string | null
+          password_iptv: string | null
+          payment_token: string | null
+          pix_emv_payload: string | null
+          plan: string | null
+          reseller_tag: string | null
+          screens: number | null
+          status: string | null
+          tenant_id: string
+          updated_at: string | null
+          username: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expiration_date?: string | null
+          id?: string
+          iptv_created_at?: string | null
+          last_access?: string | null
+          monthly_value?: number | null
+          name?: string | null
+          notes?: string | null
+          password_iptv?: string | null
+          payment_token?: string | null
+          pix_emv_payload?: string | null
+          plan?: string | null
+          reseller_tag?: string | null
+          screens?: number | null
+          status?: string | null
+          tenant_id: string
+          updated_at?: string | null
+          username: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expiration_date?: string | null
+          id?: string
+          iptv_created_at?: string | null
+          last_access?: string | null
+          monthly_value?: number | null
+          name?: string | null
+          notes?: string | null
+          password_iptv?: string | null
+          payment_token?: string | null
+          pix_emv_payload?: string | null
+          plan?: string | null
+          reseller_tag?: string | null
+          screens?: number | null
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+          username?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          customer_id: string
+          error_message: string | null
+          id: string
+          message: string | null
+          sent_at: string | null
+          success: boolean | null
+          tenant_id: string
+          type: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          customer_id: string
+          error_message?: string | null
+          id?: string
+          message?: string | null
+          sent_at?: string | null
+          success?: boolean | null
+          tenant_id: string
+          type: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          customer_id?: string
+          error_message?: string | null
+          id?: string
+          message?: string | null
+          sent_at?: string | null
+          success?: boolean | null
+          tenant_id?: string
+          type?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number | null
+          asaas_payment_id: string | null
+          asaas_pix_key: string | null
+          created_at: string | null
+          customer_id: string
+          id: string
+          new_expiration: string | null
+          paid_at: string | null
+          previous_expiration: string | null
+          raw_webhook: Json | null
+          tenant_id: string
+        }
+        Insert: {
+          amount?: number | null
+          asaas_payment_id?: string | null
+          asaas_pix_key?: string | null
+          created_at?: string | null
+          customer_id: string
+          id?: string
+          new_expiration?: string | null
+          paid_at?: string | null
+          previous_expiration?: string | null
+          raw_webhook?: Json | null
+          tenant_id: string
+        }
+        Update: {
+          amount?: number | null
+          asaas_payment_id?: string | null
+          asaas_pix_key?: string | null
+          created_at?: string | null
+          customer_id?: string
+          id?: string
+          new_expiration?: string | null
+          paid_at?: string | null
+          previous_expiration?: string | null
+          raw_webhook?: Json | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          active: boolean | null
+          asaas_api_key: string | null
+          asaas_environment: string | null
+          company_name: string
+          created_at: string | null
+          email: string
+          evolution_api_key: string | null
+          evolution_api_url: string | null
+          evolution_instance: string | null
+          id: string
+          max_customers: number | null
+          plan: string | null
+          updated_at: string | null
+          user_id: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          asaas_api_key?: string | null
+          asaas_environment?: string | null
+          company_name: string
+          created_at?: string | null
+          email: string
+          evolution_api_key?: string | null
+          evolution_api_url?: string | null
+          evolution_instance?: string | null
+          id?: string
+          max_customers?: number | null
+          plan?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          asaas_api_key?: string | null
+          asaas_environment?: string | null
+          company_name?: string
+          created_at?: string | null
+          email?: string
+          evolution_api_key?: string | null
+          evolution_api_url?: string | null
+          evolution_instance?: string | null
+          id?: string
+          max_customers?: number | null
+          plan?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_sessions: {
+        Row: {
+          connected_at: string | null
+          id: string
+          instance_name: string | null
+          qr_code: string | null
+          status: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          connected_at?: string | null
+          id?: string
+          instance_name?: string | null
+          qr_code?: string | null
+          status?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          connected_at?: string | null
+          id?: string
+          instance_name?: string | null
+          qr_code?: string | null
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_tenant_id: { Args: never; Returns: string }
+      get_public_payment_info: {
+        Args: { _token: string }
+        Returns: {
+          company_name: string
+          customer_name: string
+          expiration_date: string
+          monthly_value: number
+          pix_emv_payload: string
+          plan: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
