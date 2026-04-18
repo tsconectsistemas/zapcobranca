@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 import appCss from "../styles.css?url";
 
@@ -83,16 +84,18 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            borderRadius: "12px",
-            fontFamily: "Inter, system-ui, sans-serif",
-          },
-        }}
-      />
+      <AuthProvider>
+        <Outlet />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              borderRadius: "12px",
+              fontFamily: "Inter, system-ui, sans-serif",
+            },
+          }}
+        />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
