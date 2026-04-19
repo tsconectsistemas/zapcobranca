@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClientesIndexRouteImport } from './routes/clientes.index'
 import { Route as PagarTokenRouteImport } from './routes/pagar.$token'
 import { Route as ClientesImportarRouteImport } from './routes/clientes.importar'
+import { Route as ClientesCompletarRouteImport } from './routes/clientes.completar'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
 
 const WhatsappRoute = WhatsappRouteImport.update({
@@ -71,6 +72,11 @@ const ClientesImportarRoute = ClientesImportarRouteImport.update({
   path: '/clientes/importar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClientesCompletarRoute = ClientesCompletarRouteImport.update({
+  id: '/clientes/completar',
+  path: '/clientes/completar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClientesIdRoute = ClientesIdRouteImport.update({
   id: '/clientes/$id',
   path: '/clientes/$id',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/whatsapp': typeof WhatsappRoute
   '/clientes/$id': typeof ClientesIdRoute
+  '/clientes/completar': typeof ClientesCompletarRoute
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
   '/clientes/': typeof ClientesIndexRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/whatsapp': typeof WhatsappRoute
   '/clientes/$id': typeof ClientesIdRoute
+  '/clientes/completar': typeof ClientesCompletarRoute
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
   '/clientes': typeof ClientesIndexRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/whatsapp': typeof WhatsappRoute
   '/clientes/$id': typeof ClientesIdRoute
+  '/clientes/completar': typeof ClientesCompletarRoute
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
   '/clientes/': typeof ClientesIndexRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/whatsapp'
     | '/clientes/$id'
+    | '/clientes/completar'
     | '/clientes/importar'
     | '/pagar/$token'
     | '/clientes/'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/whatsapp'
     | '/clientes/$id'
+    | '/clientes/completar'
     | '/clientes/importar'
     | '/pagar/$token'
     | '/clientes'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/whatsapp'
     | '/clientes/$id'
+    | '/clientes/completar'
     | '/clientes/importar'
     | '/pagar/$token'
     | '/clientes/'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   WhatsappRoute: typeof WhatsappRoute
   ClientesIdRoute: typeof ClientesIdRoute
+  ClientesCompletarRoute: typeof ClientesCompletarRoute
   ClientesImportarRoute: typeof ClientesImportarRoute
   PagarTokenRoute: typeof PagarTokenRoute
   ClientesIndexRoute: typeof ClientesIndexRoute
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientesImportarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/clientes/completar': {
+      id: '/clientes/completar'
+      path: '/clientes/completar'
+      fullPath: '/clientes/completar'
+      preLoaderRoute: typeof ClientesCompletarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clientes/$id': {
       id: '/clientes/$id'
       path: '/clientes/$id'
@@ -264,6 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   WhatsappRoute: WhatsappRoute,
   ClientesIdRoute: ClientesIdRoute,
+  ClientesCompletarRoute: ClientesCompletarRoute,
   ClientesImportarRoute: ClientesImportarRoute,
   PagarTokenRoute: PagarTokenRoute,
   ClientesIndexRoute: ClientesIndexRoute,
