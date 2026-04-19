@@ -774,7 +774,7 @@ ${customer.pix_emv_payload ? `Ou copie o código PIX abaixo:\n${customer.pix_emv
           onOpenChange={(o) => !o && setConfirm(null)}
           title="Suspender cliente?"
           description={`O acesso de "${customer.name || customer.username}" será marcado como suspenso.`}
-          confirmText="Suspender"
+          confirmLabel="Suspender"
           onConfirm={() => handleStatusChange("suspended")}
         />
         <ConfirmDialog
@@ -782,7 +782,7 @@ ${customer.pix_emv_payload ? `Ou copie o código PIX abaixo:\n${customer.pix_emv
           onOpenChange={(o) => !o && setConfirm(null)}
           title="Cancelar cliente?"
           description={`O cliente "${customer.name || customer.username}" será marcado como cancelado.`}
-          confirmText="Cancelar cliente"
+          confirmLabel="Cancelar cliente"
           onConfirm={() => handleStatusChange("cancelled")}
         />
         <ConfirmDialog
@@ -790,7 +790,7 @@ ${customer.pix_emv_payload ? `Ou copie o código PIX abaixo:\n${customer.pix_emv
           onOpenChange={(o) => !o && setConfirm(null)}
           title="Excluir cliente?"
           description={`Tem certeza que deseja excluir "${customer.name || customer.username}"? Esta ação não pode ser desfeita.`}
-          confirmText="Excluir"
+          confirmLabel="Excluir"
           variant="destructive"
           onConfirm={handleDelete}
         />
