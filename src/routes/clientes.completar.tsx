@@ -109,9 +109,10 @@ function CompletarPage() {
     value: string | number | null
   ) => {
     setSavingId(id);
+    const update: Record<string, string | number | null> = { [field]: value };
     const { error } = await supabase
       .from("customers")
-      .update({ [field]: value })
+      .update(update as never)
       .eq("id", id);
     setSavingId(null);
     if (error) {
