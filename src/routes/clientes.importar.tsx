@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -636,6 +636,3 @@ function ResultStep({
   );
 }
 
-// Suppress unused warnings for hooks that may be reserved for future use.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _suppress = useEffect;
