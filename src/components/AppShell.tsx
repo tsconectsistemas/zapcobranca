@@ -61,6 +61,31 @@ interface AppShellProps {
 
 export function AppShell({ title, children }: AppShellProps) {
   const { tenant, user, signOut } = useAuth();
+  const [waDot, setWaDot] = useState<WhatsAppDot>("none");
+
+  useEffect(() => {
+    if (!tenant) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("whatsapp_sessions")
+        .select("status, instance_name")
+        .eq("tenant_id", tenant.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!data || !data.instance_name) {
+        setWaDot("none");
+      } else if (data.status === "connected") {
+        setWaDot("connected");
+      } else {
+        setWaDot("disconnected");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tenant]);
+
   const planLabel =
     tenant?.plan === "pro"
       ? "Plano Pro"
