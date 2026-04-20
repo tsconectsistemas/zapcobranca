@@ -21,6 +21,7 @@ import { Route as PagarTokenRouteImport } from './routes/pagar.$token'
 import { Route as ClientesImportarRouteImport } from './routes/clientes.importar'
 import { Route as ClientesCompletarRouteImport } from './routes/clientes.completar'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
+import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas-webhook'
 
 const WhatsappRoute = WhatsappRouteImport.update({
   id: '/whatsapp',
@@ -82,6 +83,11 @@ const ClientesIdRoute = ClientesIdRouteImport.update({
   path: '/clientes/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAsaasWebhookRoute = ApiAsaasWebhookRouteImport.update({
+  id: '/api/asaas-webhook',
+  path: '/api/asaas-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/completar': typeof ClientesCompletarRoute
   '/clientes/importar': typeof ClientesImportarRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/completar': typeof ClientesCompletarRoute
   '/clientes/importar': typeof ClientesImportarRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/completar': typeof ClientesCompletarRoute
   '/clientes/importar': typeof ClientesImportarRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/whatsapp'
+    | '/api/asaas-webhook'
     | '/clientes/$id'
     | '/clientes/completar'
     | '/clientes/importar'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/whatsapp'
+    | '/api/asaas-webhook'
     | '/clientes/$id'
     | '/clientes/completar'
     | '/clientes/importar'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/whatsapp'
+    | '/api/asaas-webhook'
     | '/clientes/$id'
     | '/clientes/completar'
     | '/clientes/importar'
@@ -179,6 +191,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   WhatsappRoute: typeof WhatsappRoute
+  ApiAsaasWebhookRoute: typeof ApiAsaasWebhookRoute
   ClientesIdRoute: typeof ClientesIdRoute
   ClientesCompletarRoute: typeof ClientesCompletarRoute
   ClientesImportarRoute: typeof ClientesImportarRoute
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/asaas-webhook': {
+      id: '/api/asaas-webhook'
+      path: '/api/asaas-webhook'
+      fullPath: '/api/asaas-webhook'
+      preLoaderRoute: typeof ApiAsaasWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -283,6 +303,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   WhatsappRoute: WhatsappRoute,
+  ApiAsaasWebhookRoute: ApiAsaasWebhookRoute,
   ClientesIdRoute: ClientesIdRoute,
   ClientesCompletarRoute: ClientesCompletarRoute,
   ClientesImportarRoute: ClientesImportarRoute,
