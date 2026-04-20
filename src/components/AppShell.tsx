@@ -181,18 +181,6 @@ export function AppShell({ title, children }: AppShellProps) {
         <ul className="grid grid-cols-5">
           {NAV_ITEMS.map((item) => (
             <li key={item.to}>
-              <BottomNavLink item={item} />
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </div>
-  );
-}
-
-        <ul className="grid grid-cols-5">
-          {NAV_ITEMS.map((item) => (
-            <li key={item.to}>
               <BottomNavLink item={item} waDot={waDot} />
             </li>
           ))}
