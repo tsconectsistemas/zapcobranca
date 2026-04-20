@@ -35,12 +35,11 @@ async function evoFetch<T = unknown>(
       parsed = text;
     }
     if (!res.ok) {
-      const message =
-        (parsed &&
-          typeof parsed === "object" &&
-          "message" in parsed &&
-          String((parsed as { message?: unknown }).message)) ||
-        `Evolution API error ${res.status}`;
+      let message = `Evolution API error ${res.status}`;
+      if (parsed && typeof parsed === "object" && "message" in parsed) {
+        const m = (parsed as { message?: unknown }).message;
+        if (m) message = String(m);
+      }
       return { success: false, error: message, status: res.status };
     }
     return { success: true, data: parsed as T };
