@@ -111,7 +111,7 @@ export function AppShell({ title, children }: AppShellProps) {
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           {NAV_ITEMS.map((item) => (
-            <SidebarLink key={item.to} item={item} />
+            <SidebarLink key={item.to} item={item} waDot={waDot} />
           ))}
         </nav>
 
@@ -190,9 +190,22 @@ export function AppShell({ title, children }: AppShellProps) {
   );
 }
 
-function SidebarLink({ item }: { item: NavItem }) {
+        <ul className="grid grid-cols-5">
+          {NAV_ITEMS.map((item) => (
+            <li key={item.to}>
+              <BottomNavLink item={item} waDot={waDot} />
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  );
+}
+
+function SidebarLink({ item, waDot }: { item: NavItem; waDot: WhatsAppDot }) {
   const Icon = item.icon;
   const isActive = useIsActive(item.to);
+  const showDot = item.to === "/whatsapp" && waDot !== "none";
   return (
     <Link
       to={item.to}
@@ -204,14 +217,23 @@ function SidebarLink({ item }: { item: NavItem }) {
       )}
     >
       <Icon className={cn("h-4 w-4", isActive && "text-primary")} />
-      <span>{item.label}</span>
+      <span className="flex-1">{item.label}</span>
+      {showDot && (
+        <span
+          className={cn(
+            "h-2 w-2 rounded-full",
+            waDot === "connected" ? "bg-emerald-500" : "bg-red-500"
+          )}
+        />
+      )}
     </Link>
   );
 }
 
-function BottomNavLink({ item }: { item: NavItem }) {
+function BottomNavLink({ item, waDot }: { item: NavItem; waDot: WhatsAppDot }) {
   const Icon = item.icon;
   const isActive = useIsActive(item.to);
+  const showDot = item.to === "/whatsapp" && waDot !== "none";
   return (
     <Link
       to={item.to}
@@ -220,7 +242,17 @@ function BottomNavLink({ item }: { item: NavItem }) {
         isActive ? "text-primary" : "text-muted-foreground"
       )}
     >
-      <Icon className="h-5 w-5" />
+      <span className="relative">
+        <Icon className="h-5 w-5" />
+        {showDot && (
+          <span
+            className={cn(
+              "absolute -top-0.5 -right-1 h-2 w-2 rounded-full ring-2 ring-card",
+              waDot === "connected" ? "bg-emerald-500" : "bg-red-500"
+            )}
+          />
+        )}
+      </span>
       <span>{item.shortLabel}</span>
     </Link>
   );
