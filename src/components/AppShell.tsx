@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
@@ -12,7 +12,10 @@ import {
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+
+type WhatsAppDot = "connected" | "disconnected" | "none";
 
 type NavRoute =
   | "/dashboard"
@@ -58,6 +61,31 @@ interface AppShellProps {
 
 export function AppShell({ title, children }: AppShellProps) {
   const { tenant, user, signOut } = useAuth();
+  const [waDot, setWaDot] = useState<WhatsAppDot>("none");
+
+  useEffect(() => {
+    if (!tenant) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("whatsapp_sessions")
+        .select("status, instance_name")
+        .eq("tenant_id", tenant.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!data || !data.instance_name) {
+        setWaDot("none");
+      } else if (data.status === "connected") {
+        setWaDot("connected");
+      } else {
+        setWaDot("disconnected");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tenant]);
+
   const planLabel =
     tenant?.plan === "pro"
       ? "Plano Pro"
@@ -83,7 +111,7 @@ export function AppShell({ title, children }: AppShellProps) {
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           {NAV_ITEMS.map((item) => (
-            <SidebarLink key={item.to} item={item} />
+            <SidebarLink key={item.to} item={item} waDot={waDot} />
           ))}
         </nav>
 
@@ -153,7 +181,7 @@ export function AppShell({ title, children }: AppShellProps) {
         <ul className="grid grid-cols-5">
           {NAV_ITEMS.map((item) => (
             <li key={item.to}>
-              <BottomNavLink item={item} />
+              <BottomNavLink item={item} waDot={waDot} />
             </li>
           ))}
         </ul>
@@ -162,9 +190,10 @@ export function AppShell({ title, children }: AppShellProps) {
   );
 }
 
-function SidebarLink({ item }: { item: NavItem }) {
+function SidebarLink({ item, waDot }: { item: NavItem; waDot: WhatsAppDot }) {
   const Icon = item.icon;
   const isActive = useIsActive(item.to);
+  const showDot = item.to === "/whatsapp" && waDot !== "none";
   return (
     <Link
       to={item.to}
@@ -176,14 +205,23 @@ function SidebarLink({ item }: { item: NavItem }) {
       )}
     >
       <Icon className={cn("h-4 w-4", isActive && "text-primary")} />
-      <span>{item.label}</span>
+      <span className="flex-1">{item.label}</span>
+      {showDot && (
+        <span
+          className={cn(
+            "h-2 w-2 rounded-full",
+            waDot === "connected" ? "bg-emerald-500" : "bg-red-500"
+          )}
+        />
+      )}
     </Link>
   );
 }
 
-function BottomNavLink({ item }: { item: NavItem }) {
+function BottomNavLink({ item, waDot }: { item: NavItem; waDot: WhatsAppDot }) {
   const Icon = item.icon;
   const isActive = useIsActive(item.to);
+  const showDot = item.to === "/whatsapp" && waDot !== "none";
   return (
     <Link
       to={item.to}
@@ -192,7 +230,17 @@ function BottomNavLink({ item }: { item: NavItem }) {
         isActive ? "text-primary" : "text-muted-foreground"
       )}
     >
-      <Icon className="h-5 w-5" />
+      <span className="relative">
+        <Icon className="h-5 w-5" />
+        {showDot && (
+          <span
+            className={cn(
+              "absolute -top-0.5 -right-1 h-2 w-2 rounded-full ring-2 ring-card",
+              waDot === "connected" ? "bg-emerald-500" : "bg-red-500"
+            )}
+          />
+        )}
+      </span>
       <span>{item.shortLabel}</span>
     </Link>
   );
