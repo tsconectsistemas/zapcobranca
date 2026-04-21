@@ -317,6 +317,14 @@ export type Database = {
     }
     Functions: {
       current_tenant_id: { Args: never; Returns: string }
+      get_dashboard_metrics: { Args: never; Returns: Json }
+      get_expiration_timeline: {
+        Args: never
+        Returns: {
+          count: number
+          expiration_date: string
+        }[]
+      }
       get_public_payment_info: {
         Args: { _token: string }
         Returns: {
