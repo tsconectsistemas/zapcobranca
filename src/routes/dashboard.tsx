@@ -141,6 +141,8 @@ function DashboardContent() {
 
   const loadAll = useCallback(async () => {
     if (!tenant) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rpc = supabase.rpc.bind(supabase) as any;
     const [
       metricsRes,
       timelineRes,
@@ -149,8 +151,10 @@ function DashboardContent() {
       notifRes,
       waRes,
     ] = await Promise.all([
-      supabase.rpc("get_dashboard_metrics" as never),
-      supabase.rpc("get_expiration_timeline" as never),
+      rpc("get_dashboard_metrics") as Promise<{ data: Metrics | null }>,
+      rpc("get_expiration_timeline") as Promise<{
+        data: TimelinePoint[] | null;
+      }>,
       supabase
         .from("customers")
         .select("id, name, username, whatsapp, expiration_date")
