@@ -22,6 +22,7 @@ import { Route as ClientesImportarRouteImport } from './routes/clientes.importar
 import { Route as ClientesCompletarRouteImport } from './routes/clientes.completar'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
 import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas-webhook'
+import { Route as ApiPublicHooksNotifyExpiringRouteImport } from './routes/api.public.hooks.notify-expiring'
 
 const WhatsappRoute = WhatsappRouteImport.update({
   id: '/whatsapp',
@@ -88,6 +89,12 @@ const ApiAsaasWebhookRoute = ApiAsaasWebhookRouteImport.update({
   path: '/api/asaas-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksNotifyExpiringRoute =
+  ApiPublicHooksNotifyExpiringRouteImport.update({
+    id: '/api/public/hooks/notify-expiring',
+    path: '/api/public/hooks/notify-expiring',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
   '/clientes/': typeof ClientesIndexRoute
+  '/api/public/hooks/notify-expiring': typeof ApiPublicHooksNotifyExpiringRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +126,7 @@ export interface FileRoutesByTo {
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
   '/clientes': typeof ClientesIndexRoute
+  '/api/public/hooks/notify-expiring': typeof ApiPublicHooksNotifyExpiringRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +143,7 @@ export interface FileRoutesById {
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
   '/clientes/': typeof ClientesIndexRoute
+  '/api/public/hooks/notify-expiring': typeof ApiPublicHooksNotifyExpiringRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/clientes/importar'
     | '/pagar/$token'
     | '/clientes/'
+    | '/api/public/hooks/notify-expiring'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/clientes/importar'
     | '/pagar/$token'
     | '/clientes'
+    | '/api/public/hooks/notify-expiring'
   id:
     | '__root__'
     | '/'
@@ -181,6 +193,7 @@ export interface FileRouteTypes {
     | '/clientes/importar'
     | '/pagar/$token'
     | '/clientes/'
+    | '/api/public/hooks/notify-expiring'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +210,7 @@ export interface RootRouteChildren {
   ClientesImportarRoute: typeof ClientesImportarRoute
   PagarTokenRoute: typeof PagarTokenRoute
   ClientesIndexRoute: typeof ClientesIndexRoute
+  ApiPublicHooksNotifyExpiringRoute: typeof ApiPublicHooksNotifyExpiringRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -292,6 +306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAsaasWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/notify-expiring': {
+      id: '/api/public/hooks/notify-expiring'
+      path: '/api/public/hooks/notify-expiring'
+      fullPath: '/api/public/hooks/notify-expiring'
+      preLoaderRoute: typeof ApiPublicHooksNotifyExpiringRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -309,6 +330,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesImportarRoute: ClientesImportarRoute,
   PagarTokenRoute: PagarTokenRoute,
   ClientesIndexRoute: ClientesIndexRoute,
+  ApiPublicHooksNotifyExpiringRoute: ApiPublicHooksNotifyExpiringRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
