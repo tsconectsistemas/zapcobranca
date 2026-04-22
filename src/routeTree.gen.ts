@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhatsappRouteImport } from './routes/whatsapp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as CobrancasRouteImport } from './routes/cobrancas'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as IndexRouteImport } from './routes/index'
@@ -37,11 +36,6 @@ const LoginRoute = LoginRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
-  id: '/configuracoes',
-  path: '/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CobrancasRoute = CobrancasRouteImport.update({
@@ -100,7 +94,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/cobrancas': typeof CobrancasRoute
-  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/whatsapp': typeof WhatsappRoute
@@ -116,7 +109,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/cobrancas': typeof CobrancasRoute
-  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/whatsapp': typeof WhatsappRoute
@@ -133,7 +125,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/cobrancas': typeof CobrancasRoute
-  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/whatsapp': typeof WhatsappRoute
@@ -151,7 +142,6 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/cobrancas'
-    | '/configuracoes'
     | '/dashboard'
     | '/login'
     | '/whatsapp'
@@ -167,7 +157,6 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/cobrancas'
-    | '/configuracoes'
     | '/dashboard'
     | '/login'
     | '/whatsapp'
@@ -183,7 +172,6 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/cobrancas'
-    | '/configuracoes'
     | '/dashboard'
     | '/login'
     | '/whatsapp'
@@ -200,7 +188,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CadastroRoute: typeof CadastroRoute
   CobrancasRoute: typeof CobrancasRoute
-  ConfiguracoesRoute: typeof ConfiguracoesRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   WhatsappRoute: typeof WhatsappRoute
@@ -234,13 +221,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/configuracoes': {
-      id: '/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/configuracoes'
-      preLoaderRoute: typeof ConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cobrancas': {
@@ -320,7 +300,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CadastroRoute: CadastroRoute,
   CobrancasRoute: CobrancasRoute,
-  ConfiguracoesRoute: ConfiguracoesRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   WhatsappRoute: WhatsappRoute,
