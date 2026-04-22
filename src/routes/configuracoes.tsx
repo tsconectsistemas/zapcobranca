@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   deleteMyAccount,
   getSettingsSnapshot,
@@ -90,7 +91,7 @@ const PLAN_FEATURES: Record<
 
 function ConfiguracoesPage() {
   const navigate = useNavigate();
-  const { tenant, refreshTenant, signOut } = useAuthSafe();
+  const { tenant, refreshTenant, signOut } = useAuth();
 
   const loadSettings = useServerFn(getSettingsSnapshot);
   const saveProfile = useServerFn(saveTenantProfile);
@@ -790,13 +791,4 @@ function NotificationSwitch({
       <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </div>
   );
-}
-
-function useAuthSafe() {
-  const { useAuth } = requireAuthHook();
-  return useAuth();
-}
-
-function requireAuthHook() {
-  return { useAuth: require("@/contexts/AuthContext").useAuth as typeof import("@/contexts/AuthContext").useAuth };
 }

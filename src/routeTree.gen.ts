@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhatsappRouteImport } from './routes/whatsapp'
+import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as CobrancasRouteImport } from './routes/cobrancas'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as IndexRouteImport } from './routes/index'
@@ -28,6 +30,11 @@ const WhatsappRoute = WhatsappRouteImport.update({
   path: '/whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlanosRoute = PlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -36,6 +43,11 @@ const LoginRoute = LoginRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CobrancasRoute = CobrancasRouteImport.update({
@@ -94,8 +106,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/cobrancas': typeof CobrancasRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/planos': typeof PlanosRoute
   '/whatsapp': typeof WhatsappRoute
   '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
@@ -109,8 +123,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/cobrancas': typeof CobrancasRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/planos': typeof PlanosRoute
   '/whatsapp': typeof WhatsappRoute
   '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
@@ -125,8 +141,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/cobrancas': typeof CobrancasRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/planos': typeof PlanosRoute
   '/whatsapp': typeof WhatsappRoute
   '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
@@ -142,8 +160,10 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/cobrancas'
+    | '/configuracoes'
     | '/dashboard'
     | '/login'
+    | '/planos'
     | '/whatsapp'
     | '/api/asaas-webhook'
     | '/clientes/$id'
@@ -157,8 +177,10 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/cobrancas'
+    | '/configuracoes'
     | '/dashboard'
     | '/login'
+    | '/planos'
     | '/whatsapp'
     | '/api/asaas-webhook'
     | '/clientes/$id'
@@ -172,8 +194,10 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/cobrancas'
+    | '/configuracoes'
     | '/dashboard'
     | '/login'
+    | '/planos'
     | '/whatsapp'
     | '/api/asaas-webhook'
     | '/clientes/$id'
@@ -188,8 +212,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CadastroRoute: typeof CadastroRoute
   CobrancasRoute: typeof CobrancasRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  PlanosRoute: typeof PlanosRoute
   WhatsappRoute: typeof WhatsappRoute
   ApiAsaasWebhookRoute: typeof ApiAsaasWebhookRoute
   ClientesIdRoute: typeof ClientesIdRoute
@@ -209,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/planos': {
+      id: '/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof PlanosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -221,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cobrancas': {
@@ -300,8 +340,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CadastroRoute: CadastroRoute,
   CobrancasRoute: CobrancasRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  PlanosRoute: PlanosRoute,
   WhatsappRoute: WhatsappRoute,
   ApiAsaasWebhookRoute: ApiAsaasWebhookRoute,
   ClientesIdRoute: ClientesIdRoute,
