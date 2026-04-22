@@ -15,9 +15,19 @@ export interface Tenant {
   company_name: string;
   email: string;
   whatsapp: string | null;
+  logo_url: string | null;
   plan: string | null;
   max_customers: number | null;
   active: boolean | null;
+  notification_settings:
+    | {
+        d3?: boolean;
+        d1?: boolean;
+        d0?: boolean;
+        confirmed?: boolean;
+        send_hour?: number;
+      }
+    | null;
   created_at: string | null;
   updated_at: string | null;
 }

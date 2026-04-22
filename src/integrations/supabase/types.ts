@@ -241,7 +241,9 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          logo_url: string | null
           max_customers: number | null
+          notification_settings: Json
           plan: string | null
           updated_at: string | null
           user_id: string | null
@@ -253,7 +255,9 @@ export type Database = {
           created_at?: string | null
           email: string
           id?: string
+          logo_url?: string | null
           max_customers?: number | null
+          notification_settings?: Json
           plan?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -265,7 +269,9 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          logo_url?: string | null
           max_customers?: number | null
+          notification_settings?: Json
           plan?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -325,6 +331,27 @@ export type Database = {
           expiration_date: string
         }[]
       }
+      get_my_settings: {
+        Args: never
+        Returns: {
+          active: boolean
+          asaas_environment: string
+          company_name: string
+          customer_count: number
+          email: string
+          evolution_api_url: string
+          evolution_instance: string
+          has_asaas_key: boolean
+          has_evolution_key: boolean
+          logo_url: string
+          max_customers: number
+          notification_settings: Json
+          plan: string
+          whatsapp: string
+          whatsapp_connected_at: string
+          whatsapp_status: string
+        }[]
+      }
       get_public_payment_info: {
         Args: { _token: string }
         Returns: {
@@ -355,6 +382,16 @@ export type Database = {
           has_evolution_key: boolean
           has_evolution_url: boolean
         }[]
+      }
+      update_my_notification_settings: {
+        Args: {
+          _confirmed: boolean
+          _d0: boolean
+          _d1: boolean
+          _d3: boolean
+          _send_hour: number
+        }
+        Returns: undefined
       }
       update_tenant_secrets: {
         Args: {
