@@ -126,7 +126,7 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
 
     await supabaseAdmin.rpc("attach_plan_pix", {
       _payment_id: row.payment_id,
-      _asaas_payment_id: asaasPaymentId,
+      _asaas_payment_id: asaasPaymentId ?? "",
       _pix_emv: pixEmv,
       _pix_image: pixImage ?? "",
     });

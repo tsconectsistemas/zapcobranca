@@ -23,6 +23,7 @@ import { Route as ClientesImportarRouteImport } from './routes/clientes.importar
 import { Route as ClientesCompletarRouteImport } from './routes/clientes.completar'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
 import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas-webhook'
+import { Route as ApiPublicPlanWebhookRouteImport } from './routes/api.public.plan-webhook'
 import { Route as ApiPublicHooksNotifyExpiringRouteImport } from './routes/api.public.hooks.notify-expiring'
 
 const WhatsappRoute = WhatsappRouteImport.update({
@@ -95,6 +96,11 @@ const ApiAsaasWebhookRoute = ApiAsaasWebhookRouteImport.update({
   path: '/api/asaas-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPlanWebhookRoute = ApiPublicPlanWebhookRouteImport.update({
+  id: '/api/public/plan-webhook',
+  path: '/api/public/plan-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksNotifyExpiringRoute =
   ApiPublicHooksNotifyExpiringRouteImport.update({
     id: '/api/public/hooks/notify-expiring',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
   '/clientes/': typeof ClientesIndexRoute
+  '/api/public/plan-webhook': typeof ApiPublicPlanWebhookRoute
   '/api/public/hooks/notify-expiring': typeof ApiPublicHooksNotifyExpiringRoute
 }
 export interface FileRoutesByTo {
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
   '/clientes': typeof ClientesIndexRoute
+  '/api/public/plan-webhook': typeof ApiPublicPlanWebhookRoute
   '/api/public/hooks/notify-expiring': typeof ApiPublicHooksNotifyExpiringRoute
 }
 export interface FileRoutesById {
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
   '/clientes/': typeof ClientesIndexRoute
+  '/api/public/plan-webhook': typeof ApiPublicPlanWebhookRoute
   '/api/public/hooks/notify-expiring': typeof ApiPublicHooksNotifyExpiringRoute
 }
 export interface FileRouteTypes {
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/clientes/importar'
     | '/pagar/$token'
     | '/clientes/'
+    | '/api/public/plan-webhook'
     | '/api/public/hooks/notify-expiring'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/clientes/importar'
     | '/pagar/$token'
     | '/clientes'
+    | '/api/public/plan-webhook'
     | '/api/public/hooks/notify-expiring'
   id:
     | '__root__'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/clientes/importar'
     | '/pagar/$token'
     | '/clientes/'
+    | '/api/public/plan-webhook'
     | '/api/public/hooks/notify-expiring'
   fileRoutesById: FileRoutesById
 }
@@ -223,6 +235,7 @@ export interface RootRouteChildren {
   ClientesImportarRoute: typeof ClientesImportarRoute
   PagarTokenRoute: typeof PagarTokenRoute
   ClientesIndexRoute: typeof ClientesIndexRoute
+  ApiPublicPlanWebhookRoute: typeof ApiPublicPlanWebhookRoute
   ApiPublicHooksNotifyExpiringRoute: typeof ApiPublicHooksNotifyExpiringRoute
 }
 
@@ -326,6 +339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAsaasWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/plan-webhook': {
+      id: '/api/public/plan-webhook'
+      path: '/api/public/plan-webhook'
+      fullPath: '/api/public/plan-webhook'
+      preLoaderRoute: typeof ApiPublicPlanWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/notify-expiring': {
       id: '/api/public/hooks/notify-expiring'
       path: '/api/public/hooks/notify-expiring'
@@ -351,6 +371,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesImportarRoute: ClientesImportarRoute,
   PagarTokenRoute: PagarTokenRoute,
   ClientesIndexRoute: ClientesIndexRoute,
+  ApiPublicPlanWebhookRoute: ApiPublicPlanWebhookRoute,
   ApiPublicHooksNotifyExpiringRoute: ApiPublicHooksNotifyExpiringRoute,
 }
 export const routeTree = rootRouteImport
