@@ -2,97 +2,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { normalizeEvolutionApiUrl } from "./evolution";
 import {
   createInstance,
   deleteInstance,
   getConnectionState,
   getQRCode,
   logoutInstance,
+  resolveWorkingEvolutionApiUrl,
   sendTextMessage,
 } from "./evolution.server";
-
-/**
- * All Evolution API calls are proxied through these server functions so the
- * tenant's API key never leaves the server. The auth middleware ensures the
- * caller is logged in, and we resolve their tenant_id server-side — clients
- * cannot pass arbitrary tenant_ids.
- */
-
-interface ResolvedTenant {
-  tenantId: string;
-  apiUrl: string;
-  apiKey: string;
-  instanceName: string;
-}
-
-async function resolveTenantConfig(
-  userId: string,
-  requireConfig: boolean,
-): Promise<
-  | { ok: true; cfg: ResolvedTenant }
-  | { ok: false; error: string; missing?: boolean }
-> {
-  // Find tenant for this user (admin client used only to read whitelisted fields)
-  const { data: tenant, error } = await supabaseAdmin
-    .from("tenants")
-    .select("id")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error || !tenant) {
-    return { ok: false, error: "Revenda não encontrada para este usuário" };
-  }
-
-  const { data: secrets } = await supabaseAdmin.rpc("get_tenant_secrets", {
-    _tenant_id: tenant.id,
-  });
-  const cfg = secrets?.[0];
-  const apiUrl = cfg?.evolution_api_url || "";
-  const apiKey = cfg?.evolution_api_key || "";
-
-  if (requireConfig && (!apiUrl || !apiKey)) {
-    return { ok: false, error: "Evolution API não configurada", missing: true };
-  }
-
-  const instanceName =
-    cfg?.evolution_instance ||
-    `zapcobranca_${tenant.id.replace(/-/g, "").substring(0, 8)}`;
-
-  return {
-    ok: true,
-    cfg: { tenantId: tenant.id, apiUrl, apiKey, instanceName },
-  };
-}
-
-// ─── Status (read-only, no Evolution call) ────────────────────────────────
-
-export const getWhatsAppStatus = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const r = await resolveTenantConfig(context.userId, false);
-    if (!r.ok) return { configured: false, connected: false, error: r.error };
-
-    const configured = !!(r.cfg.apiUrl && r.cfg.apiKey);
-
-    const { data: session } = await supabaseAdmin
-      .from("whatsapp_sessions")
-      .select("status, instance_name, connected_at")
-      .eq("tenant_id", r.cfg.tenantId)
-      .maybeSingle();
-
-    return {
-      configured,
-      connected: session?.status === "connected",
-      status: session?.status ?? "disconnected",
-      instanceName: session?.instance_name || r.cfg.instanceName,
-      connectedAt: session?.connected_at ?? null,
-    };
-  });
-
-// ─── Save Evolution config ────────────────────────────────────────────────
-
+...
 const saveConfigSchema = z.object({
-  apiUrl: z.string().url().min(1).max(500),
-  apiKey: z.string().min(1).max(500),
+  apiUrl: z.string().trim().min(1).max(500),
+  apiKey: z.string().trim().min(1).max(500),
 });
 
 export const saveEvolutionConfig = createServerFn({ method: "POST" })
@@ -110,11 +33,18 @@ export const saveEvolutionConfig = createServerFn({ method: "POST" })
       .replace(/-/g, "")
       .substring(0, 8)}`;
 
+    const resolved = await resolveWorkingEvolutionApiUrl(data.apiUrl, data.apiKey);
+    if (!resolved.success) {
+      return { success: false, error: resolved.error };
+    }
+
+    const normalizedApiUrl = normalizeEvolutionApiUrl(resolved.data.apiUrl);
+
     // Upsert directly via service role (RLS denies all direct access)
     const { error } = await supabaseAdmin.from("tenant_secrets").upsert(
       {
         tenant_id: tenant.id,
-        evolution_api_url: data.apiUrl,
+        evolution_api_url: normalizedApiUrl,
         evolution_api_key: data.apiKey,
         evolution_instance: instanceName,
         updated_at: new Date().toISOString(),
@@ -123,7 +53,7 @@ export const saveEvolutionConfig = createServerFn({ method: "POST" })
     );
 
     if (error) return { success: false, error: error.message };
-    return { success: true, instanceName };
+    return { success: true, instanceName, apiUrl: normalizedApiUrl };
   });
 
 // ─── Connect (create instance + return QR) ────────────────────────────────

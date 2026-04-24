@@ -1,4 +1,9 @@
 // Server-only helpers for Evolution API. Never import from client code.
+import {
+  getEvolutionApiUrlCandidates,
+  normalizeEvolutionApiUrl,
+} from "./evolution";
+
 type EvoResult<T = unknown> =
   | { success: true; data: T }
   | { success: false; error: string; status?: number };
@@ -8,10 +13,6 @@ interface EvoConfig {
   apiKey: string;
 }
 
-function normalize(url: string) {
-  return url.replace(/\/+$/, "");
-}
-
 async function evoFetch<T = unknown>(
   cfg: EvoConfig,
   method: "GET" | "POST" | "DELETE",
@@ -19,7 +20,7 @@ async function evoFetch<T = unknown>(
   body?: unknown,
 ): Promise<EvoResult<T>> {
   try {
-    const res = await fetch(`${normalize(cfg.apiUrl)}${path}`, {
+    const res = await fetch(`${normalizeEvolutionApiUrl(cfg.apiUrl)}${path}`, {
       method,
       headers: {
         "Content-Type": "application/json",
@@ -49,6 +50,40 @@ async function evoFetch<T = unknown>(
       error: err instanceof Error ? err.message : "Network error",
     };
   }
+}
+
+export async function resolveWorkingEvolutionApiUrl(
+  apiUrl: string,
+  apiKey: string,
+): Promise<EvoResult<{ apiUrl: string }>> {
+  const attempts: string[] = [];
+
+  for (const candidate of getEvolutionApiUrlCandidates(apiUrl)) {
+    try {
+      const res = await fetch(`${candidate}/instance/fetchInstances`, {
+        method: "GET",
+        headers: { apikey: apiKey },
+      });
+
+      if (res.ok) {
+        return { success: true, data: { apiUrl: candidate } };
+      }
+
+      attempts.push(`${candidate} (${res.status})`);
+    } catch (error) {
+      attempts.push(
+        `${candidate} (${error instanceof Error ? error.message : "network error"})`,
+      );
+    }
+  }
+
+  return {
+    success: false,
+    error:
+      attempts.length > 0
+        ? `Não foi possível conectar à Evolution API. Tentativas: ${attempts.join(" · ")}`
+        : "Informe uma URL válida da Evolution API.",
+  };
 }
 
 export async function createInstance(
