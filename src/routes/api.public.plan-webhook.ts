@@ -1,56 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-/**
- * Webhook for ZapCobrança's own platform Asaas account (subscriptions).
- * URL: /api/public/plan-webhook
- *
- * Security: optional shared token via PLATFORM_ASAAS_WEBHOOK_TOKEN header
- * "asaas-access-token". If not set, accepts unsigned requests (sandbox/dev).
- */
-
-const PAID_EVENTS = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-async function notifyTenant(
-  whatsapp: string | null,
-  tenantId: string,
-  planName: string,
-  expiresAt: string,
-  maxCustomers: number | null,
-) {
-  if (!whatsapp) return;
-  const { data: secrets } = await supabaseAdmin.rpc("get_tenant_secrets", {
-    _tenant_id: tenantId,
-  });
-  const cfg = secrets?.[0];
-  if (!cfg?.evolution_api_url || !cfg?.evolution_api_key) return;
-  const { data: session } = await supabaseAdmin
-    .from("whatsapp_sessions")
-    .select("instance_name, status")
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
-  if (!session?.instance_name || session.status !== "connected") return;
-
-  const digits = whatsapp.replace(/\D/g, "");
-  const number = digits.startsWith("55") ? digits : `55${digits}`;
-  const limitTxt = maxCustomers ? `${maxCustomers} clientes` : "clientes ilimitados";
-  const expFmt = new Date(expiresAt).toLocaleDateString("pt-BR");
-  const text =
-    `🎉 Plano *${planName}* ativado no ZapCobrança!\n\n` +
-    `Seu limite agora é de *${limitTxt}*.\n` +
-    `📅 Válido até: *${expFmt}*\n\n` +
-    `Obrigado por confiar no ZapCobrança! 💚`;
-
+import { normalizeEvolutionApiUrl } from "@/lib/evolution";
+...
   try {
     await fetch(
-      `${cfg.evolution_api_url.replace(/\/+$/, "")}/message/sendText/${encodeURIComponent(session.instance_name)}`,
+      `${normalizeEvolutionApiUrl(cfg.evolution_api_url || "")}/message/sendText/${encodeURIComponent(session.instance_name)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json", apikey: cfg.evolution_api_key },
