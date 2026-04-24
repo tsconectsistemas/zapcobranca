@@ -12,7 +12,81 @@ import {
   resolveWorkingEvolutionApiUrl,
   sendTextMessage,
 } from "./evolution.server";
-...
+
+/**
+ * All Evolution API calls are proxied through these server functions so the
+ * tenant's API key never leaves the server. The auth middleware ensures the
+ * caller is logged in, and we resolve their tenant_id server-side — clients
+ * cannot pass arbitrary tenant_ids.
+ */
+
+interface ResolvedTenant {
+  tenantId: string;
+  apiUrl: string;
+  apiKey: string;
+  instanceName: string;
+}
+
+async function resolveTenantConfig(
+  userId: string,
+  requireConfig: boolean,
+): Promise<
+  | { ok: true; cfg: ResolvedTenant }
+  | { ok: false; error: string; missing?: boolean }
+> {
+  const { data: tenant, error } = await supabaseAdmin
+    .from("tenants")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error || !tenant) {
+    return { ok: false, error: "Revenda não encontrada para este usuário" };
+  }
+
+  const { data: secrets } = await supabaseAdmin.rpc("get_tenant_secrets", {
+    _tenant_id: tenant.id,
+  });
+  const cfg = secrets?.[0];
+  const apiUrl = normalizeEvolutionApiUrl(cfg?.evolution_api_url || "");
+  const apiKey = cfg?.evolution_api_key || "";
+
+  if (requireConfig && (!apiUrl || !apiKey)) {
+    return { ok: false, error: "Evolution API não configurada", missing: true };
+  }
+
+  const instanceName =
+    cfg?.evolution_instance ||
+    `zapcobranca_${tenant.id.replace(/-/g, "").substring(0, 8)}`;
+
+  return {
+    ok: true,
+    cfg: { tenantId: tenant.id, apiUrl, apiKey, instanceName },
+  };
+}
+
+export const getWhatsAppStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const r = await resolveTenantConfig(context.userId, false);
+    if (!r.ok) return { configured: false, connected: false, error: r.error };
+
+    const configured = !!(r.cfg.apiUrl && r.cfg.apiKey);
+
+    const { data: session } = await supabaseAdmin
+      .from("whatsapp_sessions")
+      .select("status, instance_name, connected_at")
+      .eq("tenant_id", r.cfg.tenantId)
+      .maybeSingle();
+
+    return {
+      configured,
+      connected: session?.status === "connected",
+      status: session?.status ?? "disconnected",
+      instanceName: session?.instance_name || r.cfg.instanceName,
+      connectedAt: session?.connected_at ?? null,
+    };
+  });
+
 const saveConfigSchema = z.object({
   apiUrl: z.string().trim().min(1).max(500),
   apiKey: z.string().trim().min(1).max(500),
@@ -40,7 +114,6 @@ export const saveEvolutionConfig = createServerFn({ method: "POST" })
 
     const normalizedApiUrl = normalizeEvolutionApiUrl(resolved.data.apiUrl);
 
-    // Upsert directly via service role (RLS denies all direct access)
     const { error } = await supabaseAdmin.from("tenant_secrets").upsert(
       {
         tenant_id: tenant.id,
