@@ -1,7 +1,65 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { normalizeEvolutionApiUrl } from "@/lib/evolution";
-...
+
+/**
+ * Public webhook endpoint for Asaas payment notifications.
+ * URL: https://<host>/api/asaas-webhook
+ *
+ * Security:
+ * - Public endpoint (no JWT) — Asaas does not sign requests by default.
+ * - Optionally validates a shared token via `asaas-access-token` header
+ *   when ASAAS_WEBHOOK_TOKEN is configured.
+ * - Uses service-role client only after request validation.
+ * - Matches customers by PIX key + tenant scope to prevent cross-tenant writes.
+ */
+
+const PAYMENT_CONFIRMED_EVENTS = new Set([
+  "PAYMENT_CONFIRMED",
+  "PAYMENT_RECEIVED",
+]);
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function sendWhatsAppConfirmation(
+  customer: {
+    id: string;
+    tenant_id: string;
+    name: string | null;
+    username: string;
+    whatsapp: string | null;
+  },
+  _newExpiration: string,
+  message: string,
+) {
+  if (!customer.whatsapp) return;
+
+  const { data: secrets } = await supabaseAdmin.rpc("get_tenant_secrets", {
+    _tenant_id: customer.tenant_id,
+  });
+  const cfg = secrets?.[0];
+  if (!cfg?.evolution_api_url || !cfg?.evolution_instance) return;
+
+  const { data: session } = await supabaseAdmin
+    .from("whatsapp_sessions")
+    .select("instance_name, status")
+    .eq("tenant_id", customer.tenant_id)
+    .maybeSingle();
+
+  const instance = session?.instance_name || cfg.evolution_instance;
+  if (session && session.status !== "connected") return;
+
+  const digits = customer.whatsapp.replace(/\D/g, "");
+  const numberWithCountry = digits.startsWith("55") ? digits : `55${digits}`;
+
+  let success = true;
+  let errorMessage: string | null = null;
+
   try {
     const baseUrl = normalizeEvolutionApiUrl(cfg.evolution_api_url || "");
     const res = await fetch(
@@ -39,8 +97,6 @@ export const Route = createFileRoute("/api/asaas-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Optional shared-secret validation (set ASAAS_WEBHOOK_TOKEN in secrets
-        // and configure the same value as the Asaas auth token in the dashboard).
         const expectedToken = process.env.ASAAS_WEBHOOK_TOKEN;
         if (expectedToken) {
           const provided =
@@ -75,8 +131,6 @@ export const Route = createFileRoute("/api/asaas-webhook")({
             return json({ matched: false, reason: "no_pix_key" }, 200);
           }
 
-          // Find candidate customers (only those with EMV payload). Service
-          // role bypasses RLS, so tenant scoping is enforced by the match.
           const { data: customers, error: searchError } = await supabaseAdmin
             .from("customers")
             .select(
@@ -87,15 +141,12 @@ export const Route = createFileRoute("/api/asaas-webhook")({
 
           if (searchError) throw searchError;
 
-          const matched = customers?.find(
-            (c) => c.pix_emv_payload?.includes(pixKey),
-          );
+          const matched = customers?.find((c) => c.pix_emv_payload?.includes(pixKey));
 
           if (!matched) {
             return json({ matched: false }, 200);
           }
 
-          // Idempotency: if this asaas_payment_id was already processed, skip.
           if (payment?.id) {
             const { data: existing } = await supabaseAdmin
               .from("payments")
@@ -125,22 +176,20 @@ export const Route = createFileRoute("/api/asaas-webhook")({
             .eq("tenant_id", matched.tenant_id);
           if (updateError) throw updateError;
 
-          const { error: paymentError } = await supabaseAdmin
-            .from("payments")
-            .insert({
-              tenant_id: matched.tenant_id,
-              customer_id: matched.id,
-              asaas_payment_id: payment?.id ?? null,
-              asaas_pix_key: pixKey,
-              amount:
-                typeof payment?.value === "number"
-                  ? payment.value
-                  : matched.monthly_value,
-              paid_at: new Date().toISOString(),
-              previous_expiration: previousExpiration,
-              new_expiration: newExpirationDate,
-              raw_webhook: payload,
-            });
+          const { error: paymentError } = await supabaseAdmin.from("payments").insert({
+            tenant_id: matched.tenant_id,
+            customer_id: matched.id,
+            asaas_payment_id: payment?.id ?? null,
+            asaas_pix_key: pixKey,
+            amount:
+              typeof payment?.value === "number"
+                ? payment.value
+                : matched.monthly_value,
+            paid_at: new Date().toISOString(),
+            previous_expiration: previousExpiration,
+            new_expiration: newExpirationDate,
+            raw_webhook: payload,
+          });
           if (paymentError) throw paymentError;
 
           const displayName = matched.name || matched.username;

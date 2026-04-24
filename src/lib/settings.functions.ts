@@ -3,7 +3,88 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { normalizeEvolutionApiUrl } from "./evolution";
-...
+
+const logoUrlSchema = z.union([
+  z.literal(""),
+  z.string().trim().url().max(500),
+]);
+
+const profileSchema = z.object({
+  companyName: z.string().trim().min(2).max(120),
+  whatsapp: z.string().trim().max(20),
+  logoUrl: logoUrlSchema,
+});
+
+const notificationSettingsSchema = z.object({
+  d3: z.boolean(),
+  d1: z.boolean(),
+  d0: z.boolean(),
+  confirmed: z.boolean(),
+  sendHour: z.number().int().refine((value) => [7, 8, 9, 10].includes(value)),
+});
+
+const deleteAccountSchema = z.object({
+  confirmationText: z.string().trim().min(2).max(120),
+});
+
+async function getTenantId(userId: string) {
+  const { data: tenant, error } = await supabaseAdmin
+    .from("tenants")
+    .select("id, company_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error || !tenant) {
+    throw new Error("Revenda não encontrada");
+  }
+
+  return tenant;
+}
+
+export const getSettingsSnapshot = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const tenant = await getTenantId(context.userId);
+
+    const [{ data: fullTenant }, { data: secrets }, { data: session }] = await Promise.all([
+      supabaseAdmin
+        .from("tenants")
+        .select(
+          "id, company_name, email, whatsapp, logo_url, plan, max_customers, active, notification_settings",
+        )
+        .eq("id", tenant.id)
+        .maybeSingle(),
+      supabaseAdmin.rpc("get_tenant_secrets", { _tenant_id: tenant.id }),
+      supabaseAdmin
+        .from("whatsapp_sessions")
+        .select("status, instance_name, connected_at")
+        .eq("tenant_id", tenant.id)
+        .maybeSingle(),
+    ]);
+
+    const { count: customerCount } = await supabaseAdmin
+      .from("customers")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenant.id)
+      .neq("status", "cancelled");
+
+    const secretRow = secrets?.[0];
+    const settings = (fullTenant?.notification_settings as
+      | {
+          d3?: boolean;
+          d1?: boolean;
+          d0?: boolean;
+          confirmed?: boolean;
+          send_hour?: number;
+        }
+      | null) ?? {
+      d3: true,
+      d1: true,
+      d0: true,
+      confirmed: true,
+      send_hour: 9,
+    };
+
     return {
       tenant: {
         id: fullTenant?.id ?? tenant.id,
@@ -66,7 +147,7 @@ export const saveTenantProfile = createServerFn({ method: "POST" })
 export const saveNotificationPreferences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => notificationSettingsSchema.parse(input))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const { error } = await supabaseAdmin.rpc("update_my_notification_settings", {
       _d3: data.d3,
       _d1: data.d1,
