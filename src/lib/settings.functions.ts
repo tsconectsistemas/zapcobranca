@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { normalizeEvolutionApiUrl } from "./evolution";
 
 const logoUrlSchema = z.union([
   z.literal(""),
@@ -108,7 +109,7 @@ export const getSettingsSnapshot = createServerFn({ method: "GET" })
         hasApiKey: Boolean(secretRow?.asaas_api_key),
       },
       evolution: {
-        apiUrl: secretRow?.evolution_api_url ?? "",
+        apiUrl: normalizeEvolutionApiUrl(secretRow?.evolution_api_url ?? ""),
         hasApiKey: Boolean(secretRow?.evolution_api_key),
         instanceName:
           secretRow?.evolution_instance ?? `zapcobranca_${tenant.id.replace(/-/g, "").slice(0, 8)}`,
@@ -146,7 +147,7 @@ export const saveTenantProfile = createServerFn({ method: "POST" })
 export const saveNotificationPreferences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => notificationSettingsSchema.parse(input))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const { error } = await supabaseAdmin.rpc("update_my_notification_settings", {
       _d3: data.d3,
       _d1: data.d1,

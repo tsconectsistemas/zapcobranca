@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { normalizeEvolutionApiUrl } from "@/lib/evolution";
 
 /**
  * Daily notification scheduler — called by pg_cron.
@@ -18,13 +19,9 @@ export const Route = createFileRoute("/api/public/hooks/notify-expiring")({
         const CRON_SECRET = process.env.CRON_SECRET;
 
         if (!SUPABASE_URL || !SERVICE_ROLE) {
-          return Response.json(
-            { error: "Server misconfigured" },
-            { status: 500 },
-          );
+          return Response.json({ error: "Server misconfigured" }, { status: 500 });
         }
 
-        // Auth check
         const auth = request.headers.get("authorization") || "";
         if (!CRON_SECRET || auth !== `Bearer ${CRON_SECRET}`) {
           return new Response("Unauthorized", { status: 401 });
@@ -66,7 +63,6 @@ export const Route = createFileRoute("/api/public/hooks/notify-expiring")({
           skipped: 0,
         };
 
-        // Cache tenant config + sessions per tenant_id
         const tenantCache = new Map<
           string,
           {
@@ -84,7 +80,7 @@ export const Route = createFileRoute("/api/public/hooks/notify-expiring")({
             _tenant_id: tenantId,
           });
           const s = secrets?.[0];
-          const apiUrl = (s?.evolution_api_url || "").replace(/\/+$/, "");
+          const apiUrl = normalizeEvolutionApiUrl(s?.evolution_api_url || "");
           const apiKey = s?.evolution_api_key || "";
 
           const { data: session } = await supabase
@@ -119,7 +115,7 @@ export const Route = createFileRoute("/api/public/hooks/notify-expiring")({
             continue;
           }
 
-          const exp = new Date(expDate + "T00:00:00Z");
+          const exp = new Date(`${expDate}T00:00:00Z`);
           const daysUntil = Math.round(
             (exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
           );
@@ -136,7 +132,6 @@ export const Route = createFileRoute("/api/public/hooks/notify-expiring")({
             continue;
           }
 
-          // Already sent today?
           const { data: existing } = await supabase
             .from("notifications")
             .select("id")
@@ -156,9 +151,7 @@ export const Route = createFileRoute("/api/public/hooks/notify-expiring")({
           }
 
           const name = c.name || c.username;
-          const expFmt = new Date(expDate + "T12:00:00").toLocaleDateString(
-            "pt-BR",
-          );
+          const expFmt = new Date(`${expDate}T12:00:00`).toLocaleDateString("pt-BR");
           const valor = c.monthly_value
             ? `R$ ${Number(c.monthly_value).toFixed(2).replace(".", ",")}`
             : "";
@@ -225,18 +218,15 @@ export const Route = createFileRoute("/api/public/hooks/notify-expiring")({
           else results.failed++;
         }
 
-        // ─── Plan expiration handling (platform subscriptions) ────────────
         const planResults = { reminded: 0, downgraded: 0 };
         const appBaseUrl =
           process.env.APP_URL ||
           "https://project--e30b04c9-b9c6-40cd-a6cc-baf762543a71.lovable.app";
 
         try {
-          // 1. Send reminders to tenants whose plan expires in <= 3 days
-          const { data: expiring } = await supabase.rpc(
-            "get_tenants_plan_expiring",
-            { _days: 3 },
-          );
+          const { data: expiring } = await supabase.rpc("get_tenants_plan_expiring", {
+            _days: 3,
+          });
 
           for (const t of expiring || []) {
             if (!t.whatsapp) continue;
@@ -270,7 +260,6 @@ export const Route = createFileRoute("/api/public/hooks/notify-expiring")({
             }
           }
 
-          // 2. Auto-downgrade expired plans
           const { data: downgraded } = await supabase.rpc("expire_overdue_plans");
           planResults.downgraded = downgraded?.length ?? 0;
         } catch (e) {

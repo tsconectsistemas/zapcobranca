@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { normalizeEvolutionApiUrl } from "@/lib/evolution";
 
 /**
  * Public webhook endpoint for Asaas payment notifications.
@@ -33,12 +34,11 @@ async function sendWhatsAppConfirmation(
     username: string;
     whatsapp: string | null;
   },
-  newExpiration: string,
+  _newExpiration: string,
   message: string,
 ) {
   if (!customer.whatsapp) return;
 
-  // Resolve Evolution API config from tenant_secrets via secure RPC
   const { data: secrets } = await supabaseAdmin.rpc("get_tenant_secrets", {
     _tenant_id: customer.tenant_id,
   });
@@ -61,7 +61,7 @@ async function sendWhatsAppConfirmation(
   let errorMessage: string | null = null;
 
   try {
-    const baseUrl = cfg.evolution_api_url.replace(/\/+$/, "");
+    const baseUrl = normalizeEvolutionApiUrl(cfg.evolution_api_url || "");
     const res = await fetch(
       `${baseUrl}/message/sendText/${encodeURIComponent(instance)}`,
       {
@@ -97,8 +97,6 @@ export const Route = createFileRoute("/api/asaas-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Optional shared-secret validation (set ASAAS_WEBHOOK_TOKEN in secrets
-        // and configure the same value as the Asaas auth token in the dashboard).
         const expectedToken = process.env.ASAAS_WEBHOOK_TOKEN;
         if (expectedToken) {
           const provided =
@@ -133,8 +131,6 @@ export const Route = createFileRoute("/api/asaas-webhook")({
             return json({ matched: false, reason: "no_pix_key" }, 200);
           }
 
-          // Find candidate customers (only those with EMV payload). Service
-          // role bypasses RLS, so tenant scoping is enforced by the match.
           const { data: customers, error: searchError } = await supabaseAdmin
             .from("customers")
             .select(
@@ -145,15 +141,12 @@ export const Route = createFileRoute("/api/asaas-webhook")({
 
           if (searchError) throw searchError;
 
-          const matched = customers?.find(
-            (c) => c.pix_emv_payload?.includes(pixKey),
-          );
+          const matched = customers?.find((c) => c.pix_emv_payload?.includes(pixKey));
 
           if (!matched) {
             return json({ matched: false }, 200);
           }
 
-          // Idempotency: if this asaas_payment_id was already processed, skip.
           if (payment?.id) {
             const { data: existing } = await supabaseAdmin
               .from("payments")
@@ -183,22 +176,20 @@ export const Route = createFileRoute("/api/asaas-webhook")({
             .eq("tenant_id", matched.tenant_id);
           if (updateError) throw updateError;
 
-          const { error: paymentError } = await supabaseAdmin
-            .from("payments")
-            .insert({
-              tenant_id: matched.tenant_id,
-              customer_id: matched.id,
-              asaas_payment_id: payment?.id ?? null,
-              asaas_pix_key: pixKey,
-              amount:
-                typeof payment?.value === "number"
-                  ? payment.value
-                  : matched.monthly_value,
-              paid_at: new Date().toISOString(),
-              previous_expiration: previousExpiration,
-              new_expiration: newExpirationDate,
-              raw_webhook: payload,
-            });
+          const { error: paymentError } = await supabaseAdmin.from("payments").insert({
+            tenant_id: matched.tenant_id,
+            customer_id: matched.id,
+            asaas_payment_id: payment?.id ?? null,
+            asaas_pix_key: pixKey,
+            amount:
+              typeof payment?.value === "number"
+                ? payment.value
+                : matched.monthly_value,
+            paid_at: new Date().toISOString(),
+            previous_expiration: previousExpiration,
+            new_expiration: newExpirationDate,
+            raw_webhook: payload,
+          });
           if (paymentError) throw paymentError;
 
           const displayName = matched.name || matched.username;

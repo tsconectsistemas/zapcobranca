@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { normalizeEvolutionApiUrl } from "@/lib/evolution";
 
 /**
  * Webhook for ZapCobrança's own platform Asaas account (subscriptions).
@@ -50,7 +51,7 @@ async function notifyTenant(
 
   try {
     await fetch(
-      `${cfg.evolution_api_url.replace(/\/+$/, "")}/message/sendText/${encodeURIComponent(session.instance_name)}`,
+      `${normalizeEvolutionApiUrl(cfg.evolution_api_url || "")}/message/sendText/${encodeURIComponent(session.instance_name)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json", apikey: cfg.evolution_api_key },
@@ -103,7 +104,6 @@ export const Route = createFileRoute("/api/public/plan-webhook")({
           const row = rows?.[0];
           if (!row) return json({ matched: false }, 200);
 
-          // Resolve plan name + max for the WhatsApp message
           const { data: plan } = await supabaseAdmin
             .from("plans")
             .select("name, max_customers")

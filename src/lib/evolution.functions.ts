@@ -2,12 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { normalizeEvolutionApiUrl } from "./evolution";
 import {
   createInstance,
   deleteInstance,
   getConnectionState,
   getQRCode,
   logoutInstance,
+  resolveWorkingEvolutionApiUrl,
   sendTextMessage,
 } from "./evolution.server";
 
@@ -32,7 +34,6 @@ async function resolveTenantConfig(
   | { ok: true; cfg: ResolvedTenant }
   | { ok: false; error: string; missing?: boolean }
 > {
-  // Find tenant for this user (admin client used only to read whitelisted fields)
   const { data: tenant, error } = await supabaseAdmin
     .from("tenants")
     .select("id")
@@ -46,7 +47,7 @@ async function resolveTenantConfig(
     _tenant_id: tenant.id,
   });
   const cfg = secrets?.[0];
-  const apiUrl = cfg?.evolution_api_url || "";
+  const apiUrl = normalizeEvolutionApiUrl(cfg?.evolution_api_url || "");
   const apiKey = cfg?.evolution_api_key || "";
 
   if (requireConfig && (!apiUrl || !apiKey)) {
@@ -62,8 +63,6 @@ async function resolveTenantConfig(
     cfg: { tenantId: tenant.id, apiUrl, apiKey, instanceName },
   };
 }
-
-// ─── Status (read-only, no Evolution call) ────────────────────────────────
 
 export const getWhatsAppStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -88,11 +87,9 @@ export const getWhatsAppStatus = createServerFn({ method: "GET" })
     };
   });
 
-// ─── Save Evolution config ────────────────────────────────────────────────
-
 const saveConfigSchema = z.object({
-  apiUrl: z.string().url().min(1).max(500),
-  apiKey: z.string().min(1).max(500),
+  apiUrl: z.string().trim().min(1).max(500),
+  apiKey: z.string().trim().min(1).max(500),
 });
 
 export const saveEvolutionConfig = createServerFn({ method: "POST" })
@@ -110,11 +107,17 @@ export const saveEvolutionConfig = createServerFn({ method: "POST" })
       .replace(/-/g, "")
       .substring(0, 8)}`;
 
-    // Upsert directly via service role (RLS denies all direct access)
+    const resolved = await resolveWorkingEvolutionApiUrl(data.apiUrl, data.apiKey);
+    if (!resolved.success) {
+      return { success: false, error: resolved.error };
+    }
+
+    const normalizedApiUrl = normalizeEvolutionApiUrl(resolved.data.apiUrl);
+
     const { error } = await supabaseAdmin.from("tenant_secrets").upsert(
       {
         tenant_id: tenant.id,
-        evolution_api_url: data.apiUrl,
+        evolution_api_url: normalizedApiUrl,
         evolution_api_key: data.apiKey,
         evolution_instance: instanceName,
         updated_at: new Date().toISOString(),
@@ -123,7 +126,7 @@ export const saveEvolutionConfig = createServerFn({ method: "POST" })
     );
 
     if (error) return { success: false, error: error.message };
-    return { success: true, instanceName };
+    return { success: true, instanceName, apiUrl: normalizedApiUrl };
   });
 
 // ─── Connect (create instance + return QR) ────────────────────────────────
