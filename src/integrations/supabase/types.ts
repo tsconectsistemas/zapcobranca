@@ -196,6 +196,105 @@ export type Database = {
           },
         ]
       }
+      plan_payments: {
+        Row: {
+          amount: number
+          asaas_payment_id: string | null
+          billing_cycle: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          paid_at: string | null
+          pix_emv_payload: string | null
+          pix_qrcode_image: string | null
+          plan_id: string
+          raw_webhook: Json | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          asaas_payment_id?: string | null
+          billing_cycle: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          paid_at?: string | null
+          pix_emv_payload?: string | null
+          pix_qrcode_image?: string | null
+          plan_id: string
+          raw_webhook?: Json | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          asaas_payment_id?: string | null
+          billing_cycle?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          paid_at?: string | null
+          pix_emv_payload?: string | null
+          pix_qrcode_image?: string | null
+          plan_id?: string
+          raw_webhook?: Json | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_payments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          active: boolean
+          features: Json
+          id: string
+          max_customers: number | null
+          name: string
+          price_monthly: number
+          price_yearly: number
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          features?: Json
+          id: string
+          max_customers?: number | null
+          name: string
+          price_monthly: number
+          price_yearly: number
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          features?: Json
+          id?: string
+          max_customers?: number | null
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
       tenant_secrets: {
         Row: {
           asaas_api_key: string | null
@@ -245,6 +344,8 @@ export type Database = {
           max_customers: number | null
           notification_settings: Json
           plan: string | null
+          plan_expires_at: string | null
+          plan_payment_token: string | null
           updated_at: string | null
           user_id: string | null
           whatsapp: string | null
@@ -259,6 +360,8 @@ export type Database = {
           max_customers?: number | null
           notification_settings?: Json
           plan?: string | null
+          plan_expires_at?: string | null
+          plan_payment_token?: string | null
           updated_at?: string | null
           user_id?: string | null
           whatsapp?: string | null
@@ -273,6 +376,8 @@ export type Database = {
           max_customers?: number | null
           notification_settings?: Json
           plan?: string | null
+          plan_expires_at?: string | null
+          plan_payment_token?: string | null
           updated_at?: string | null
           user_id?: string | null
           whatsapp?: string | null
@@ -322,13 +427,56 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      attach_plan_pix: {
+        Args: {
+          _asaas_payment_id: string
+          _payment_id: string
+          _pix_emv: string
+          _pix_image: string
+        }
+        Returns: undefined
+      }
+      confirm_plan_payment: {
+        Args: { _amount: number; _asaas_payment_id: string; _raw: Json }
+        Returns: {
+          expires_at: string
+          plan_id: string
+          tenant_company: string
+          tenant_id: string
+          tenant_whatsapp: string
+        }[]
+      }
       current_tenant_id: { Args: never; Returns: string }
+      expire_overdue_plans: {
+        Args: never
+        Returns: {
+          company_name: string
+          previous_plan: string
+          tenant_id: string
+          whatsapp: string
+        }[]
+      }
       get_dashboard_metrics: { Args: never; Returns: Json }
       get_expiration_timeline: {
         Args: never
         Returns: {
           count: number
           expiration_date: string
+        }[]
+      }
+      get_my_plan_status: {
+        Args: never
+        Returns: {
+          customer_count: number
+          features: Json
+          is_expired: boolean
+          max_customers: number
+          plan_expires_at: string
+          plan_id: string
+          plan_name: string
+          price_monthly: number
+          price_yearly: number
+          usage_pct: number
         }[]
       }
       get_my_settings: {
@@ -350,6 +498,14 @@ export type Database = {
           whatsapp: string
           whatsapp_connected_at: string
           whatsapp_status: string
+        }[]
+      }
+      get_plan_payment_status: {
+        Args: { _payment_id: string }
+        Returns: {
+          expires_at: string
+          plan_id: string
+          status: string
         }[]
       }
       get_public_payment_info: {
@@ -381,6 +537,29 @@ export type Database = {
           has_evolution_instance: boolean
           has_evolution_key: boolean
           has_evolution_url: boolean
+        }[]
+      }
+      get_tenants_plan_expiring: {
+        Args: { _days?: number }
+        Returns: {
+          company_name: string
+          expires_at: string
+          plan_id: string
+          plan_name: string
+          tenant_id: string
+          whatsapp: string
+        }[]
+      }
+      start_plan_checkout: {
+        Args: { _billing_cycle: string; _plan_id: string }
+        Returns: {
+          amount: number
+          billing_cycle: string
+          payment_id: string
+          plan_id: string
+          plan_name: string
+          plan_payment_token: string
+          tenant_id: string
         }[]
       }
       update_my_notification_settings: {
