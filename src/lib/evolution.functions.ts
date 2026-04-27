@@ -2,10 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { normalizeEvolutionApiUrl } from "./evolution";
+import { buildInstanceName, normalizeEvolutionApiUrl } from "./evolution";
 import {
   createInstance,
   deleteInstance,
+  fetchInstances,
   getConnectionState,
   getQRCode,
   logoutInstance,
@@ -54,9 +55,9 @@ async function resolveTenantConfig(
     return { ok: false, error: "Evolution API não configurada", missing: true };
   }
 
-  const instanceName =
-    cfg?.evolution_instance ||
-    `zapcobranca_${tenant.id.replace(/-/g, "").substring(0, 8)}`;
+  // Always use the canonical v2 instance name format. If the stored value
+  // was generated under an older format, this overrides it.
+  const instanceName = cfg?.evolution_instance || buildInstanceName(tenant.id);
 
   return {
     ok: true,
@@ -84,6 +85,7 @@ export const getWhatsAppStatus = createServerFn({ method: "GET" })
       status: session?.status ?? "disconnected",
       instanceName: session?.instance_name || r.cfg.instanceName,
       connectedAt: session?.connected_at ?? null,
+      apiUrl: r.cfg.apiUrl,
     };
   });
 
@@ -103,16 +105,16 @@ export const saveEvolutionConfig = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!tenant) return { success: false, error: "Revenda não encontrada" };
 
-    const instanceName = `zapcobranca_${tenant.id
-      .replace(/-/g, "")
-      .substring(0, 8)}`;
+    const instanceName = buildInstanceName(tenant.id);
 
     const resolved = await resolveWorkingEvolutionApiUrl(data.apiUrl, data.apiKey);
     if (!resolved.success) {
       return { success: false, error: resolved.error };
     }
 
-    const normalizedApiUrl = normalizeEvolutionApiUrl(resolved.data.apiUrl);
+    const normalizedApiUrl = normalizeEvolutionApiUrl(
+      resolved.data?.apiUrl ?? data.apiUrl,
+    );
 
     const { error } = await supabaseAdmin.from("tenant_secrets").upsert(
       {
@@ -139,16 +141,15 @@ export const connectWhatsApp = createServerFn({ method: "POST" })
     const { tenantId, apiUrl, apiKey, instanceName } = r.cfg;
 
     // Create (idempotent — Evolution returns 403/409 if exists; ignore)
-    await createInstance({ apiUrl, apiKey }, instanceName);
+    await createInstance(apiUrl, apiKey, instanceName);
 
-    const qr = await getQRCode({ apiUrl, apiKey }, instanceName);
+    const qr = await getQRCode(apiUrl, apiKey, instanceName);
     if (!qr.success) {
       return { success: false, error: qr.error };
     }
 
-    const qrData = qr.data as { base64?: string; code?: string } | null;
-    const qrBase64 = qrData?.base64 || null;
-    const qrCode = qrData?.code || null;
+    const qrBase64 = qr.data?.base64 ?? null;
+    const qrCode = qr.data?.code ?? null;
 
     // Persist session row
     await supabaseAdmin.from("whatsapp_sessions").upsert(
@@ -179,13 +180,12 @@ export const refreshQRCode = createServerFn({ method: "POST" })
     if (!r.ok) return { success: false, error: r.error };
     const { apiUrl, apiKey, instanceName } = r.cfg;
 
-    const qr = await getQRCode({ apiUrl, apiKey }, instanceName);
+    const qr = await getQRCode(apiUrl, apiKey, instanceName);
     if (!qr.success) return { success: false, error: qr.error };
-    const qrData = qr.data as { base64?: string; code?: string } | null;
     return {
       success: true,
-      qrBase64: qrData?.base64 || null,
-      qrCode: qrData?.code || null,
+      qrBase64: qr.data?.base64 ?? null,
+      qrCode: qr.data?.code ?? null,
     };
   });
 
@@ -198,11 +198,10 @@ export const pollConnectionState = createServerFn({ method: "POST" })
     if (!r.ok) return { success: false, error: r.error, state: "unknown" };
     const { tenantId, apiUrl, apiKey, instanceName } = r.cfg;
 
-    const res = await getConnectionState({ apiUrl, apiKey }, instanceName);
+    const res = await getConnectionState(apiUrl, apiKey, instanceName);
     if (!res.success) return { success: false, error: res.error, state: "unknown" };
 
-    const raw = res.data as { instance?: { state?: string }; state?: string };
-    const state = raw?.instance?.state || raw?.state || "unknown";
+    const state = res.data?.state ?? "unknown";
     const connected = state === "open";
 
     if (connected) {
@@ -240,14 +239,11 @@ export const sendTestMessage = createServerFn({ method: "POST" })
     if (!r.ok) return { success: false, error: r.error };
     const { apiUrl, apiKey, instanceName } = r.cfg;
 
-    const number = data.number.startsWith("55")
-      ? data.number
-      : `55${data.number}`;
-
     const res = await sendTextMessage(
-      { apiUrl, apiKey },
+      apiUrl,
+      apiKey,
       instanceName,
-      number,
+      data.number,
       data.text,
     );
     if (!res.success) return { success: false, error: res.error };
@@ -264,8 +260,8 @@ export const disconnectWhatsApp = createServerFn({ method: "POST" })
     const { tenantId, apiUrl, apiKey, instanceName } = r.cfg;
 
     // Best-effort logout + delete; ignore individual errors
-    await logoutInstance({ apiUrl, apiKey }, instanceName);
-    await deleteInstance({ apiUrl, apiKey }, instanceName);
+    await logoutInstance(apiUrl, apiKey, instanceName);
+    await deleteInstance(apiUrl, apiKey, instanceName);
 
     await supabaseAdmin
       .from("whatsapp_sessions")
@@ -278,4 +274,22 @@ export const disconnectWhatsApp = createServerFn({ method: "POST" })
       .eq("tenant_id", tenantId);
 
     return { success: true };
+  });
+
+// ─── Debug: raw fetchInstances response ──────────────────────────────────
+
+export const debugFetchInstances = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const r = await resolveTenantConfig(context.userId, true);
+    if (!r.ok) return { success: false, error: r.error };
+    const { apiUrl, apiKey, instanceName } = r.cfg;
+    const res = await fetchInstances(apiUrl, apiKey);
+    return {
+      success: res.success,
+      error: res.success ? undefined : res.error,
+      raw: res.success ? JSON.stringify(res.data, null, 2) : undefined,
+      apiUrl,
+      instanceName,
+    };
   });

@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   connectWhatsApp,
+  debugFetchInstances,
   disconnectWhatsApp,
   getWhatsAppStatus,
   pollConnectionState,
@@ -76,9 +77,11 @@ function WhatsAppPage() {
   const [testOpen, setTestOpen] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [qrCountdown, setQrCountdown] = useState(45);
 
   const refreshTimer = useRef<number | null>(null);
   const pollTimer = useRef<number | null>(null);
+  const countdownTimer = useRef<number | null>(null);
 
   const loadStatus = useCallback(async () => {
     try {
@@ -114,21 +117,42 @@ function WhatsAppPage() {
     return () => {
       if (refreshTimer.current) window.clearInterval(refreshTimer.current);
       if (pollTimer.current) window.clearInterval(pollTimer.current);
+      if (countdownTimer.current) window.clearInterval(countdownTimer.current);
     };
   }, []);
 
-  // Start polling whenever we enter QR state
+  const refreshQrNow = useCallback(async () => {
+    const res = (await refreshFn()) as {
+      success: boolean;
+      qrBase64?: string | null;
+      qrCode?: string | null;
+      error?: string;
+    };
+    if (res.success) {
+      setView((v) =>
+        v.kind === "qr"
+          ? { ...v, qrBase64: res.qrBase64 ?? null, qrCode: res.qrCode ?? null }
+          : v,
+      );
+      setQrCountdown(45);
+    }
+    return res;
+  }, [refreshFn]);
+
+  // Start polling + countdown whenever we enter QR state
   useEffect(() => {
     if (view.kind !== "qr") return;
     if (pollTimer.current) window.clearInterval(pollTimer.current);
-    if (refreshTimer.current) window.clearInterval(refreshTimer.current);
+    if (countdownTimer.current) window.clearInterval(countdownTimer.current);
+
+    setQrCountdown(45);
 
     pollTimer.current = window.setInterval(async () => {
       try {
-        const res = await pollFn();
+        const res = (await pollFn()) as { success: boolean; connected?: boolean };
         if (res.success && res.connected) {
           if (pollTimer.current) window.clearInterval(pollTimer.current);
-          if (refreshTimer.current) window.clearInterval(refreshTimer.current);
+          if (countdownTimer.current) window.clearInterval(countdownTimer.current);
           toast.success("WhatsApp conectado!");
           await loadStatus();
         }
@@ -137,26 +161,22 @@ function WhatsAppPage() {
       }
     }, 5000);
 
-    refreshTimer.current = window.setInterval(async () => {
-      try {
-        const res = await refreshFn();
-        if (res.success) {
-          setView((v) =>
-            v.kind === "qr"
-              ? { ...v, qrBase64: res.qrBase64, qrCode: res.qrCode }
-              : v,
-          );
+    countdownTimer.current = window.setInterval(() => {
+      setQrCountdown((prev) => {
+        if (prev <= 1) {
+          // refresh QR — fire and forget
+          refreshQrNow().catch(() => {});
+          return 45;
         }
-      } catch {
-        // ignore
-      }
-    }, 30000);
+        return prev - 1;
+      });
+    }, 1000);
 
     return () => {
       if (pollTimer.current) window.clearInterval(pollTimer.current);
-      if (refreshTimer.current) window.clearInterval(refreshTimer.current);
+      if (countdownTimer.current) window.clearInterval(countdownTimer.current);
     };
-  }, [view.kind, pollFn, refreshFn, loadStatus]);
+  }, [view.kind, pollFn, loadStatus, refreshQrNow]);
 
   const handleSaveConfig = async () => {
     if (!apiUrl.trim() || !apiKey.trim()) {
@@ -337,6 +357,12 @@ function WhatsAppPage() {
                 <li>Toque em "Conectar um aparelho"</li>
                 <li>Aponte a câmera para este QR Code</li>
               </ol>
+              <p className="text-center text-xs text-muted-foreground">
+                QR Code expira em:{" "}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {qrCountdown}s
+                </span>
+              </p>
               <div className="flex justify-center">
                 <Button variant="outline" onClick={handleManualRefresh}>
                   <RefreshCw className="mr-2 h-4 w-4" />
@@ -389,7 +415,10 @@ function WhatsAppPage() {
           open={testOpen}
           onOpenChange={setTestOpen}
           onSend={async (number, text) => {
-            const res = await sendTestFn({ data: { number, text } });
+            const res = (await sendTestFn({ data: { number, text } })) as {
+              success: boolean;
+              error?: string;
+            };
             if (!res.success) throw new Error(res.error);
           }}
         />
@@ -404,6 +433,8 @@ function WhatsAppPage() {
           loading={disconnecting}
           onConfirm={handleDisconnect}
         />
+
+        {import.meta.env.DEV && <DebugPanel />}
       </AppShell>
     </PrivateRoute>
   );
@@ -511,3 +542,96 @@ function SendTestModal({
     </Dialog>
   );
 }
+
+function DebugPanel() {
+  const debugFn = useServerFn(debugFetchInstances);
+  const sendFn = useServerFn(sendTestMessage);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<string>("");
+  const [testNumber, setTestNumber] = useState("");
+
+  const runFetch = async () => {
+    setLoading(true);
+    try {
+      const res = (await debugFn()) as {
+        success: boolean;
+        error?: string;
+        raw?: string;
+        apiUrl?: string;
+        instanceName?: string;
+      };
+      setResult(JSON.stringify(res, null, 2));
+    } catch (err) {
+      setResult(String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const runSend = async () => {
+    const digits = unmaskDigits(testNumber);
+    if (digits.length < 10) {
+      toast.error("Número inválido");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = (await sendFn({
+        data: { number: digits, text: "Teste de envio do ZapCobrança 🔧" },
+      })) as { success: boolean; error?: string };
+      setResult(JSON.stringify(res, null, 2));
+      if (res.success) toast.success("Mensagem enviada");
+      else toast.error(res.error || "Falha");
+    } catch (err) {
+      setResult(String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="mt-6 max-w-2xl border-dashed">
+      <CardHeader className="pb-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full items-center justify-between text-left"
+        >
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            🔧 Debug (somente DEV)
+          </CardTitle>
+          <span className="text-xs text-muted-foreground">
+            {open ? "ocultar" : "mostrar"}
+          </span>
+        </button>
+      </CardHeader>
+      {open && (
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={runFetch} disabled={loading}>
+              Testar conexão (fetchInstances)
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Número para teste"
+              value={testNumber}
+              onChange={(e) => setTestNumber(e.target.value)}
+              className="max-w-xs"
+            />
+            <Button size="sm" variant="outline" onClick={runSend} disabled={loading}>
+              Testar envio
+            </Button>
+          </div>
+          {result && (
+            <pre className="max-h-64 overflow-auto rounded-md bg-muted p-3 text-[11px]">
+              {result}
+            </pre>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
