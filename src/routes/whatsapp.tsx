@@ -542,3 +542,96 @@ function SendTestModal({
     </Dialog>
   );
 }
+
+function DebugPanel() {
+  const debugFn = useServerFn(debugFetchInstances);
+  const sendFn = useServerFn(sendTestMessage);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<string>("");
+  const [testNumber, setTestNumber] = useState("");
+
+  const runFetch = async () => {
+    setLoading(true);
+    try {
+      const res = (await debugFn()) as {
+        success: boolean;
+        error?: string;
+        raw?: string;
+        apiUrl?: string;
+        instanceName?: string;
+      };
+      setResult(JSON.stringify(res, null, 2));
+    } catch (err) {
+      setResult(String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const runSend = async () => {
+    const digits = unmaskDigits(testNumber);
+    if (digits.length < 10) {
+      toast.error("Número inválido");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = (await sendFn({
+        data: { number: digits, text: "Teste de envio do ZapCobrança 🔧" },
+      })) as { success: boolean; error?: string };
+      setResult(JSON.stringify(res, null, 2));
+      if (res.success) toast.success("Mensagem enviada");
+      else toast.error(res.error || "Falha");
+    } catch (err) {
+      setResult(String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="mt-6 max-w-2xl border-dashed">
+      <CardHeader className="pb-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full items-center justify-between text-left"
+        >
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            🔧 Debug (somente DEV)
+          </CardTitle>
+          <span className="text-xs text-muted-foreground">
+            {open ? "ocultar" : "mostrar"}
+          </span>
+        </button>
+      </CardHeader>
+      {open && (
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={runFetch} disabled={loading}>
+              Testar conexão (fetchInstances)
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Número para teste"
+              value={testNumber}
+              onChange={(e) => setTestNumber(e.target.value)}
+              className="max-w-xs"
+            />
+            <Button size="sm" variant="outline" onClick={runSend} disabled={loading}>
+              Testar envio
+            </Button>
+          </div>
+          {result && (
+            <pre className="max-h-64 overflow-auto rounded-md bg-muted p-3 text-[11px]">
+              {result}
+            </pre>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
