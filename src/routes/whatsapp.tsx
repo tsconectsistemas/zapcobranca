@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   connectWhatsApp,
+  debugFetchInstances,
   disconnectWhatsApp,
   getWhatsAppStatus,
   pollConnectionState,
