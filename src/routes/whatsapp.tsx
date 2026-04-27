@@ -389,7 +389,10 @@ function WhatsAppPage() {
           open={testOpen}
           onOpenChange={setTestOpen}
           onSend={async (number, text) => {
-            const res = await sendTestFn({ data: { number, text } });
+            const res = (await sendTestFn({ data: { number, text } })) as {
+              success: boolean;
+              error?: string;
+            };
             if (!res.success) throw new Error(res.error);
           }}
         />
