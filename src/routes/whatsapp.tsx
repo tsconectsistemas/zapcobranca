@@ -117,21 +117,42 @@ function WhatsAppPage() {
     return () => {
       if (refreshTimer.current) window.clearInterval(refreshTimer.current);
       if (pollTimer.current) window.clearInterval(pollTimer.current);
+      if (countdownTimer.current) window.clearInterval(countdownTimer.current);
     };
   }, []);
 
-  // Start polling whenever we enter QR state
+  const refreshQrNow = useCallback(async () => {
+    const res = (await refreshFn()) as {
+      success: boolean;
+      qrBase64?: string | null;
+      qrCode?: string | null;
+      error?: string;
+    };
+    if (res.success) {
+      setView((v) =>
+        v.kind === "qr"
+          ? { ...v, qrBase64: res.qrBase64 ?? null, qrCode: res.qrCode ?? null }
+          : v,
+      );
+      setQrCountdown(45);
+    }
+    return res;
+  }, [refreshFn]);
+
+  // Start polling + countdown whenever we enter QR state
   useEffect(() => {
     if (view.kind !== "qr") return;
     if (pollTimer.current) window.clearInterval(pollTimer.current);
-    if (refreshTimer.current) window.clearInterval(refreshTimer.current);
+    if (countdownTimer.current) window.clearInterval(countdownTimer.current);
+
+    setQrCountdown(45);
 
     pollTimer.current = window.setInterval(async () => {
       try {
-        const res = await pollFn();
+        const res = (await pollFn()) as { success: boolean; connected?: boolean };
         if (res.success && res.connected) {
           if (pollTimer.current) window.clearInterval(pollTimer.current);
-          if (refreshTimer.current) window.clearInterval(refreshTimer.current);
+          if (countdownTimer.current) window.clearInterval(countdownTimer.current);
           toast.success("WhatsApp conectado!");
           await loadStatus();
         }
@@ -140,26 +161,22 @@ function WhatsAppPage() {
       }
     }, 5000);
 
-    refreshTimer.current = window.setInterval(async () => {
-      try {
-        const res = await refreshFn();
-        if (res.success) {
-          setView((v) =>
-            v.kind === "qr"
-              ? { ...v, qrBase64: res.qrBase64, qrCode: res.qrCode }
-              : v,
-          );
+    countdownTimer.current = window.setInterval(() => {
+      setQrCountdown((prev) => {
+        if (prev <= 1) {
+          // refresh QR — fire and forget
+          refreshQrNow().catch(() => {});
+          return 45;
         }
-      } catch {
-        // ignore
-      }
-    }, 30000);
+        return prev - 1;
+      });
+    }, 1000);
 
     return () => {
       if (pollTimer.current) window.clearInterval(pollTimer.current);
-      if (refreshTimer.current) window.clearInterval(refreshTimer.current);
+      if (countdownTimer.current) window.clearInterval(countdownTimer.current);
     };
-  }, [view.kind, pollFn, refreshFn, loadStatus]);
+  }, [view.kind, pollFn, loadStatus, refreshQrNow]);
 
   const handleSaveConfig = async () => {
     if (!apiUrl.trim() || !apiKey.trim()) {
