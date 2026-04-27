@@ -77,9 +77,11 @@ function WhatsAppPage() {
   const [testOpen, setTestOpen] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [qrCountdown, setQrCountdown] = useState(45);
 
   const refreshTimer = useRef<number | null>(null);
   const pollTimer = useRef<number | null>(null);
+  const countdownTimer = useRef<number | null>(null);
 
   const loadStatus = useCallback(async () => {
     try {
