@@ -357,6 +357,12 @@ function WhatsAppPage() {
                 <li>Toque em "Conectar um aparelho"</li>
                 <li>Aponte a câmera para este QR Code</li>
               </ol>
+              <p className="text-center text-xs text-muted-foreground">
+                QR Code expira em:{" "}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {qrCountdown}s
+                </span>
+              </p>
               <div className="flex justify-center">
                 <Button variant="outline" onClick={handleManualRefresh}>
                   <RefreshCw className="mr-2 h-4 w-4" />
