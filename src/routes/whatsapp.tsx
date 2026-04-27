@@ -433,6 +433,8 @@ function WhatsAppPage() {
           loading={disconnecting}
           onConfirm={handleDisconnect}
         />
+
+        {import.meta.env.DEV && <DebugPanel />}
       </AppShell>
     </PrivateRoute>
   );
