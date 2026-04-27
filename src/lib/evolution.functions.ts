@@ -247,7 +247,7 @@ export const sendTestMessage = createServerFn({ method: "POST" })
       data.text,
     );
     if (!res.success) return { success: false, error: res.error };
-    return { success: true, data: res.data };
+    return { success: true };
   });
 
 // ─── Disconnect ──────────────────────────────────────────────────────────
@@ -288,7 +288,7 @@ export const debugFetchInstances = createServerFn({ method: "POST" })
     return {
       success: res.success,
       error: res.success ? undefined : res.error,
-      data: res.success ? res.data : undefined,
+      raw: res.success ? JSON.stringify(res.data, null, 2) : undefined,
       apiUrl,
       instanceName,
     };
