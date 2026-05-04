@@ -31,12 +31,14 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
     if (!authHeader) {
       const cookieHeader = request.headers.get('cookie');
       if (cookieHeader) {
-        const tokenMatch = cookieHeader.match(/sb-[a-z0-9]+-auth-token=([^;]+)/);
+        // Look for any Supabase auth token in cookies (the project ID part can vary)
+        const tokenMatch = cookieHeader.match(/sb-[a-zA-Z0-9]+-auth-token=([^;]+)/);
         if (tokenMatch?.[1]) {
           try {
             const authData = JSON.parse(decodeURIComponent(tokenMatch[1]));
-            if (authData?.access_token) {
-              authHeader = `Bearer ${authData.access_token}`;
+            const access_token = Array.isArray(authData) ? authData[0] : authData?.access_token;
+            if (access_token) {
+              authHeader = `Bearer ${access_token}`;
             }
           } catch (e) {
             // Failed to parse cookie
@@ -46,7 +48,9 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
     }
 
     if (!authHeader) {
-      throw new Response('Unauthorized: No authorization header provided', { status: 401 });
+      // For debugging in preview, let's see what headers we DO have
+      const headerKeys = Array.from(request.headers.keys()).join(', ');
+      throw new Response(`Unauthorized: No authorization header provided. Available: ${headerKeys}`, { status: 401 });
     }
 
     if (!authHeader.startsWith('Bearer ')) {
