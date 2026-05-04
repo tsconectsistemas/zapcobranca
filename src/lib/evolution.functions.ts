@@ -91,7 +91,7 @@ export const getWhatsAppStatus = createServerFn({ method: "GET" })
 
 const saveConfigSchema = z.object({
   apiUrl: z.string().trim().min(1).max(500),
-  apiKey: z.string().trim().min(1).max(500),
+  apiKey: z.string().trim().max(500).optional(),
 });
 
 export const saveEvolutionConfig = createServerFn({ method: "POST" })
@@ -107,7 +107,16 @@ export const saveEvolutionConfig = createServerFn({ method: "POST" })
 
     const instanceName = buildInstanceName(tenant.id);
 
-    const resolved = await resolveWorkingEvolutionApiUrl(data.apiUrl, data.apiKey);
+    const { data: existingSecrets } = await supabaseAdmin.rpc("get_tenant_secrets", {
+      _tenant_id: tenant.id,
+    });
+    const effectiveApiKey = data.apiKey || existingSecrets?.[0]?.evolution_api_key;
+
+    if (!effectiveApiKey) {
+      return { success: false, error: "API Key é necessária" };
+    }
+
+    const resolved = await resolveWorkingEvolutionApiUrl(data.apiUrl, effectiveApiKey);
     if (!resolved.success) {
       return { success: false, error: resolved.error };
     }
@@ -120,7 +129,7 @@ export const saveEvolutionConfig = createServerFn({ method: "POST" })
       {
         tenant_id: tenant.id,
         evolution_api_url: normalizedApiUrl,
-        evolution_api_key: data.apiKey,
+        evolution_api_key: effectiveApiKey,
         evolution_instance: instanceName,
         updated_at: new Date().toISOString(),
       },

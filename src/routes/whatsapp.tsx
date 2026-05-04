@@ -179,7 +179,8 @@ function WhatsAppPage() {
   }, [view.kind, pollFn, loadStatus, refreshQrNow]);
 
   const handleSaveConfig = async () => {
-    if (!apiUrl.trim() || !apiKey.trim()) {
+    const isConfigured = view.kind !== "not_configured";
+    if (!apiUrl.trim() || (!apiKey.trim() && !isConfigured)) {
       toast.error("Preencha URL e API Key");
       return;
     }
