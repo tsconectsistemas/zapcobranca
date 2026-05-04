@@ -242,7 +242,7 @@ function ConfiguracoesPage() {
   };
 
   const handleSaveWhatsApp = async () => {
-    if (!evolutionApiUrl.trim() || !evolutionApiKey.trim()) {
+    if (!evolutionApiUrl.trim() || (!evolutionApiKey.trim() && !hasEvolutionKey)) {
       toast.error("Preencha a URL e a API Key da Evolution");
       return;
     }
@@ -252,7 +252,7 @@ function ConfiguracoesPage() {
       const result = await saveEvolution({
         data: {
           apiUrl: evolutionApiUrl.trim(),
-          apiKey: evolutionApiKey.trim(),
+          apiKey: evolutionApiKey.trim() || "", // Envia vazio se não alterou a chave já existente
         },
       });
       if (!result.success) throw new Error(result.error);
