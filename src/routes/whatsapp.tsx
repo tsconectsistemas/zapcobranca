@@ -190,6 +190,7 @@ function WhatsAppPage() {
       });
       if (!res.success) throw new Error(res.error);
       toast.success("Configuração salva!");
+      setApiUrl("");
       setApiKey("");
       await loadStatus();
     } catch (err) {
@@ -434,7 +435,7 @@ function WhatsAppPage() {
           onConfirm={handleDisconnect}
         />
 
-        {import.meta.env.DEV && <DebugPanel />}
+        <DebugPanel />
       </AppShell>
     </PrivateRoute>
   );
