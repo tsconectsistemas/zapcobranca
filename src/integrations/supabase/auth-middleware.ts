@@ -25,7 +25,25 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       throw new Response('Unauthorized: No request headers available', { status: 401 });
     }
 
-    const authHeader = request.headers.get('authorization');
+    let authHeader = request.headers.get('authorization');
+
+    // In local development or some SSR scenarios, the authorization header might be in lowercase or missing from headers but present in cookies
+    if (!authHeader) {
+      const cookieHeader = request.headers.get('cookie');
+      if (cookieHeader) {
+        const tokenMatch = cookieHeader.match(/sb-[a-z0-9]+-auth-token=([^;]+)/);
+        if (tokenMatch?.[1]) {
+          try {
+            const authData = JSON.parse(decodeURIComponent(tokenMatch[1]));
+            if (authData?.access_token) {
+              authHeader = `Bearer ${authData.access_token}`;
+            }
+          } catch (e) {
+            // Failed to parse cookie
+          }
+        }
+      }
+    }
 
     if (!authHeader) {
       throw new Response('Unauthorized: No authorization header provided', { status: 401 });
