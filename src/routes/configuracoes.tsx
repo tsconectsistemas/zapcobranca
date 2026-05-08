@@ -249,12 +249,14 @@ function ConfiguracoesPage() {
 
     setSavingWhatsApp(true);
     try {
+      console.log("[Config] Saving Evolution Config...");
       const result = await saveEvolution({
         data: {
           apiUrl: evolutionApiUrl.trim(),
-          apiKey: evolutionApiKey.trim() || "", // Envia vazio se não alterou a chave já existente
+          apiKey: evolutionApiKey.trim() || "",
         },
       });
+      console.log("[Config] Save Result:", result);
       if (!result.success) throw new Error(result.error);
 
       setHasEvolutionKey(true);
