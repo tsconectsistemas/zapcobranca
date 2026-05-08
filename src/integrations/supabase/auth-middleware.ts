@@ -25,6 +25,10 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       throw new Response('Unauthorized: No request headers available', { status: 401 });
     }
 
+    // --- LOGGING FOR DEBUGGING ---
+    console.log(`[AuthMiddleware] ${request.method} ${request.url}`);
+    // -----------------------------
+
     // 1. Authorization header
     let authHeader = request.headers.get('authorization');
 
@@ -60,7 +64,8 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
     if (!authHeader) {
       // For debugging in preview, let's see what headers we DO have
       const headerKeys = Array.from(request.headers.keys()).join(', ');
-      throw new Response(`Unauthorized: No authorization header provided. Available: ${headerKeys}`, { status: 401 });
+      console.error(`[AuthMiddleware] Unauthorized: No authorization header. Method: ${request.method}. Headers: ${headerKeys}`);
+      throw new Response(`Unauthorized: No authorization header provided. Method: ${request.method}`, { status: 401 });
     }
 
     if (!authHeader.startsWith('Bearer ')) {

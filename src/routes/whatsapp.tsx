@@ -186,9 +186,11 @@ function WhatsAppPage() {
     }
     setSavingConfig(true);
     try {
+      console.log("[WhatsApp] Saving Evolution Config...");
       const res = await saveConfig({
         data: { apiUrl: apiUrl.trim(), apiKey: apiKey.trim() },
       });
+      console.log("[WhatsApp] Save Result:", res);
       if (!res.success) throw new Error(res.error);
       toast.success("Configuração salva!");
       setApiUrl("");
