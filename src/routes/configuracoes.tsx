@@ -250,11 +250,16 @@ function ConfiguracoesPage() {
     setSavingWhatsApp(true);
     try {
       console.log("[Config] Saving Evolution Config...");
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const result = await saveEvolution({
         data: {
           apiUrl: evolutionApiUrl.trim(),
           apiKey: evolutionApiKey.trim() || "",
         },
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
       });
       console.log("[Config] Save Result:", result);
       if (!result.success) throw new Error(result.error);
@@ -264,6 +269,7 @@ function ConfiguracoesPage() {
       setInstanceName(result.instanceName);
       toast.success("Configurações WhatsApp salvas!");
     } catch (error) {
+      console.error("[Config] Save Error:", error);
       toast.error(error instanceof Error ? error.message : "Erro ao salvar WhatsApp");
     } finally {
       setSavingWhatsApp(false);
