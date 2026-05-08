@@ -489,7 +489,13 @@ function WhatsAppPage() {
           open={testOpen}
           onOpenChange={setTestOpen}
           onSend={async (number, text) => {
-            const res = (await sendTestFn({ data: { number, text } })) as {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
+            const res = (await sendTestFn({ 
+              data: { number, text },
+              headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+            })) as {
               success: boolean;
               error?: string;
             };
