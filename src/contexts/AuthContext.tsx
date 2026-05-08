@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 1. Set up the listener FIRST (sync only inside callback)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
 
@@ -93,6 +93,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }, 0);
       } else {
         setTenant(null);
+      }
+      
+      // Ensure page is reloaded on auth state changes that might affect server functions
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // No full reload needed, but we can clear stale states
       }
     });
 

@@ -25,13 +25,14 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       throw new Response('Unauthorized: No request headers available', { status: 401 });
     }
 
+    // 1. Authorization header
     let authHeader = request.headers.get('authorization');
 
-    // In local development or some SSR scenarios, the authorization header might be in lowercase or missing from headers but present in cookies
+    // 2. Cookie fallback (useful for SSR/Refresh)
     if (!authHeader) {
       const cookieHeader = request.headers.get('cookie');
       if (cookieHeader) {
-        // Look for any Supabase auth token in cookies (the project ID part can vary)
+        // Look for any Supabase auth token in cookies
         const tokenMatch = cookieHeader.match(/sb-[a-zA-Z0-9]+-auth-token=([^;]+)/);
         if (tokenMatch?.[1]) {
           try {
@@ -44,6 +45,15 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
             // Failed to parse cookie
           }
         }
+      }
+    }
+
+    // 3. Last resort: URL parameter fallback (useful for testing or specific client environments)
+    if (!authHeader) {
+      const url = new URL(request.url);
+      const access_token = url.searchParams.get('access_token');
+      if (access_token) {
+        authHeader = `Bearer ${access_token}`;
       }
     }
 
