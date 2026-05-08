@@ -186,9 +186,24 @@ function WhatsAppPage() {
     }
     setSavingConfig(true);
     try {
-      console.log("[WhatsApp] Saving Evolution Config...");
+      console.log("[WhatsApp] Saving Evolution Config...", { apiUrl });
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        console.error("[WhatsApp] No auth session found");
+        toast.error("Sessão expirada. Faça login novamente.");
+        return;
+      }
+
+      console.log("[WhatsApp] Token found, sending request...");
+
       const res = await saveConfig({
         data: { apiUrl: apiUrl.trim(), apiKey: apiKey.trim() },
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       console.log("[WhatsApp] Save Result:", res);
       if (!res.success) throw new Error(res.error);
@@ -197,6 +212,7 @@ function WhatsAppPage() {
       setApiKey("");
       await loadStatus();
     } catch (err) {
+      console.error("[WhatsApp] Save Error:", err);
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
       setSavingConfig(false);
