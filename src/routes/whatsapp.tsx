@@ -86,7 +86,12 @@ function WhatsAppPage() {
 
   const loadStatus = useCallback(async () => {
     try {
-      const status = await fetchStatus();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const status = await fetchStatus({
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
       if (!status.configured) {
         setView({ kind: "not_configured" });
         return;
