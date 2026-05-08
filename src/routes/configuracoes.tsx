@@ -144,7 +144,12 @@ function ConfiguracoesPage() {
     const sync = async () => {
       setLoading(true);
       try {
-        const data = (await loadSettings()) as SettingsSnapshot;
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
+        const data = (await loadSettings({
+          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+        })) as SettingsSnapshot;
         setCompanyName(data.tenant.companyName);
         setEmail(data.tenant.email);
         setResellerWhatsApp(maskWhatsApp(data.tenant.whatsapp));
