@@ -128,21 +128,32 @@ function WhatsAppPage() {
   }, []);
 
   const refreshQrNow = useCallback(async () => {
-    const res = (await refreshFn()) as {
-      success: boolean;
-      qrBase64?: string | null;
-      qrCode?: string | null;
-      error?: string;
-    };
-    if (res.success) {
-      setView((v) =>
-        v.kind === "qr"
-          ? { ...v, qrBase64: res.qrBase64 ?? null, qrCode: res.qrCode ?? null }
-          : v,
-      );
-      setQrCountdown(45);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const res = (await refreshFn({
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      })) as {
+        success: boolean;
+        qrBase64?: string | null;
+        qrCode?: string | null;
+        error?: string;
+      };
+      
+      if (res.success) {
+        setView((v) =>
+          v.kind === "qr"
+            ? { ...v, qrBase64: res.qrBase64 ?? null, qrCode: res.qrCode ?? null }
+            : v,
+        );
+        setQrCountdown(45);
+      }
+      return res;
+    } catch (err) {
+      console.error("[WhatsApp] Refresh QR error:", err);
+      return { success: false, error: "Erro ao atualizar QR Code" };
     }
-    return res;
   }, [refreshFn]);
 
   // Start polling + countdown whenever we enter QR state
@@ -155,15 +166,21 @@ function WhatsAppPage() {
 
     pollTimer.current = window.setInterval(async () => {
       try {
-        const res = (await pollFn()) as { success: boolean; connected?: boolean };
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
+        const res = (await pollFn({
+          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+        })) as { success: boolean; connected?: boolean };
+        
         if (res.success && res.connected) {
           if (pollTimer.current) window.clearInterval(pollTimer.current);
           if (countdownTimer.current) window.clearInterval(countdownTimer.current);
           toast.success("WhatsApp conectado!");
           await loadStatus();
         }
-      } catch {
-        // ignore transient errors
+      } catch (err) {
+        console.error("[WhatsApp] Poll error:", err);
       }
     }, 5000);
 
@@ -472,7 +489,13 @@ function WhatsAppPage() {
           open={testOpen}
           onOpenChange={setTestOpen}
           onSend={async (number, text) => {
-            const res = (await sendTestFn({ data: { number, text } })) as {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
+            const res = (await sendTestFn({ 
+              data: { number, text },
+              headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+            })) as {
               success: boolean;
               error?: string;
             };

@@ -79,12 +79,38 @@ export const getWhatsAppStatus = createServerFn({ method: "GET" })
       .eq("tenant_id", r.cfg.tenantId)
       .maybeSingle();
 
+    let connected = session?.status === "connected";
+    let state = session?.status ?? "disconnected";
+    let connectedAt = session?.connected_at ?? null;
+
+    // If DB doesn't say connected, but we are configured, let's double check with Evolution
+    if (!connected && configured) {
+      const res = await getConnectionState(r.cfg.apiUrl, r.cfg.apiKey, r.cfg.instanceName);
+      if (res.success && res.data?.state === "open") {
+        connected = true;
+        state = "connected";
+        connectedAt = new Date().toISOString();
+
+        // Update DB so it's synced
+        await supabaseAdmin.from("whatsapp_sessions").upsert(
+          {
+            tenant_id: r.cfg.tenantId,
+            instance_name: r.cfg.instanceName,
+            status: "connected",
+            connected_at: connectedAt,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "tenant_id" },
+        );
+      }
+    }
+
     return {
       configured,
-      connected: session?.status === "connected",
-      status: session?.status ?? "disconnected",
+      connected,
+      status: state,
       instanceName: session?.instance_name || r.cfg.instanceName,
-      connectedAt: session?.connected_at ?? null,
+      connectedAt,
       apiUrl: r.cfg.apiUrl,
     };
   });
