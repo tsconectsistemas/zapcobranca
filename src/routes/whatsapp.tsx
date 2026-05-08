@@ -36,6 +36,7 @@ import {
   sendTestMessage,
 } from "@/lib/evolution.functions";
 import { unmaskDigits } from "@/lib/masks";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/whatsapp")({
