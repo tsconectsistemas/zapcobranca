@@ -208,10 +208,20 @@ function WhatsAppPage() {
       });
       console.log("[WhatsApp] Save Result:", res);
       if (!res.success) throw new Error(res.error);
+      
       toast.success("Configuração salva!");
-      setApiUrl("");
-      setApiKey("");
+      
+      // Don't clear fields if we are about to connect
+      // setApiUrl("");
+      // setApiKey("");
+      
       await loadStatus();
+      
+      // Auto-trigger connection after saving if not already connected
+      if (res.success) {
+        console.log("[WhatsApp] Auto-connecting after save...");
+        await handleConnect();
+      }
     } catch (err) {
       console.error("[WhatsApp] Save Error:", err);
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");

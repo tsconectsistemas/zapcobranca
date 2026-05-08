@@ -265,9 +265,12 @@ function ConfiguracoesPage() {
       if (!result.success) throw new Error(result.error);
 
       setHasEvolutionKey(true);
-      setEvolutionApiKey("");
+      // setEvolutionApiKey(""); // Mantém o valor para referência visual
       setInstanceName(result.instanceName);
       toast.success("Configurações WhatsApp salvas!");
+      
+      // Se salvou com sucesso, tenta atualizar o status para refletir a nova configuração
+      await loadSettings();
     } catch (error) {
       console.error("[Config] Save Error:", error);
       toast.error(error instanceof Error ? error.message : "Erro ao salvar WhatsApp");
