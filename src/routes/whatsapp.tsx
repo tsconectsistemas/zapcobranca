@@ -215,17 +215,23 @@ function WhatsAppPage() {
       if (!res.success) throw new Error(res.error);
       
       toast.success("Configuração salva!");
-      
-      // Don't clear fields if we are about to connect
-      // setApiUrl("");
-      // setApiKey("");
-      
       await loadStatus();
       
-      // Auto-trigger connection after saving if not already connected
       if (res.success) {
         console.log("[WhatsApp] Auto-connecting after save...");
-        await handleConnect();
+        const connectRes = await connectFn({
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (connectRes.success) {
+          setView({
+            kind: "qr",
+            instanceName: connectRes.instanceName!,
+            qrBase64: connectRes.qrBase64!,
+            qrCode: connectRes.qrCode!,
+          });
+        }
       }
     } catch (err) {
       console.error("[WhatsApp] Save Error:", err);
@@ -238,7 +244,12 @@ function WhatsAppPage() {
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      const res = await connectFn();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const res = await connectFn({
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
       if (!res.success) throw new Error(res.error);
       setView({
         kind: "qr",
@@ -255,7 +266,12 @@ function WhatsAppPage() {
 
   const handleManualRefresh = async () => {
     try {
-      const res = await refreshFn();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const res = await refreshFn({
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
       if (res.success) {
         setView((v) =>
           v.kind === "qr"
@@ -274,7 +290,12 @@ function WhatsAppPage() {
   const handleDisconnect = async () => {
     setDisconnecting(true);
     try {
-      const res = await disconnectFn();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const res = await disconnectFn({
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
       if (!res.success) throw new Error(res.error);
       toast.success("WhatsApp desconectado");
       setConfirmDisconnect(false);
