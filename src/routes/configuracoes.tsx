@@ -326,7 +326,7 @@ function ConfiguracoesPage() {
   const handleSaveNotifConfig = async () => {
     setSavingNotifications(true);
     try {
-      const result = await saveNotifConfig(notifConfig);
+      const result = await saveNotifConfig({ data: notifConfig });
       if (!result.success) throw new Error(result.error);
 
       await refreshTenant();
