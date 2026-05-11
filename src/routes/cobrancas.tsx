@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { triggerNotificationsNow } from "@/lib/notifications.functions";
+import { triggerNotificationsNow, retryNotification } from "@/lib/notifications.functions";
 
 export const Route = createFileRoute("/cobrancas")({
   head: () => ({ meta: [{ title: "Cobranças — ZapCobrança" }] }),
@@ -49,6 +49,21 @@ interface NotificationRow {
   whatsapp_number: string | null;
   sent_at: string | null;
   success: boolean | null;
+  error_message: string | null;
+  customer_id: string;
+  customers: { id: string; name: string | null; username: string } | null;
+}
+
+interface QueueRow {
+  id: string;
+  type: string;
+  message: string;
+  whatsapp_number: string;
+  status: 'pending' | 'sent' | 'failed';
+  attempts: number;
+  next_attempt_at: string | null;
+  created_at: string;
+  sent_at: string | null;
   error_message: string | null;
   customer_id: string;
   customers: { id: string; name: string | null; username: string } | null;
@@ -105,14 +120,18 @@ function CobrancasPage() {
   const { tenant } = useAuth();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [notifs, setNotifs] = useState<NotificationRow[]>([]);
+  const [queue, setQueue] = useState<QueueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [filter, setFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<string>("notifications");
+  const [queueFilter, setQueueFilter] = useState<string>("all");
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
   async function loadAll() {
     if (!tenant) return;
     setLoading(true);
-    const [pRes, nRes] = await Promise.all([
+    const [pRes, nRes, qRes] = await Promise.all([
       supabase
         .from("payments")
         .select(
@@ -129,14 +148,29 @@ function CobrancasPage() {
         .eq("tenant_id", tenant.id)
         .order("sent_at", { ascending: false })
         .limit(200),
+      supabase
+        .from("notification_queue")
+        .select(
+          "id, type, message, whatsapp_number, status, attempts, next_attempt_at, created_at, sent_at, error_message, customer_id, customers(id, name, username)",
+        )
+        .eq("tenant_id", tenant.id)
+        .order("created_at", { ascending: false })
+        .limit(100),
     ]);
     setPayments((pRes.data as unknown as PaymentRow[]) || []);
     setNotifs((nRes.data as unknown as NotificationRow[]) || []);
+    setQueue((qRes.data as unknown as QueueRow[]) || []);
+    setLastRefreshed(new Date());
     setLoading(false);
   }
 
   useEffect(() => {
     loadAll();
+    const interval = setInterval(() => {
+      loadAll();
+    }, 30000);
+
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenant]);
 
@@ -149,8 +183,12 @@ function CobrancasPage() {
       sentToday: today.length,
       success: today.filter((n) => n.success).length,
       failed: today.filter((n) => !n.success).length,
+      pendingQueue: queue.filter(q => q.status === 'pending').length,
+      failedQueue: queue.filter(q => q.status === 'failed').length,
+      retryingQueue: queue.filter(q => q.status === 'pending' && q.attempts > 0).length,
+      sentQueueToday: queue.filter(q => q.status === 'sent' && q.sent_at?.startsWith(todayStr)).length,
     };
-  }, [notifs]);
+  }, [notifs, queue]);
 
   const filtered = useMemo(() => {
     switch (filter) {
@@ -169,6 +207,23 @@ function CobrancasPage() {
     }
   }, [notifs, filter]);
 
+  const filteredQueue = useMemo(() => {
+    switch (queueFilter) {
+      case "pending":
+        return queue.filter((q) => q.status === "pending");
+      case "sent":
+        return queue.filter((q) => q.status === "sent");
+      case "failed":
+        return queue.filter((q) => q.status === "failed");
+      case "retrying":
+        return queue.filter((q) => q.attempts > 1);
+      default:
+        return queue;
+    }
+  }, [queue, queueFilter]);
+
+  const retryFn = useServerFn(retryNotification);
+
   async function handleManualTrigger() {
     setRunning(true);
     try {
@@ -183,6 +238,20 @@ function CobrancasPage() {
       }
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function handleRetry(id: string) {
+    try {
+      const res = await retryFn({ data: { id } });
+      if (res.success) {
+        toast.success("Notificação reagendada!");
+        await loadAll();
+      } else {
+        toast.error("Erro ao reagendar");
+      }
+    } catch (e) {
+      toast.error("Erro de conexão");
     }
   }
 
