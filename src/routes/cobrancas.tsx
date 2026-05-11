@@ -265,133 +265,243 @@ function CobrancasPage() {
         />
 
         {/* Summary cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card>
-            <CardContent className="p-4">
-              <div className="text-xs text-muted-foreground">Enviadas hoje</div>
-              <div className="text-2xl font-semibold">{stats.sentToday}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-xs text-muted-foreground">Sucesso</div>
-              <div className="text-2xl font-semibold text-emerald-600">
-                {stats.success}
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Aguardando envio</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.pendingQueue}</p>
+              </div>
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <Clock className="h-5 w-5 text-blue-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-xs text-muted-foreground">Falhas</div>
-              <div className="text-2xl font-semibold text-red-600">
-                {stats.failed}
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Enviadas hoje</p>
+                <p className="text-2xl font-bold text-emerald-600">{stats.sentToday + stats.sentQueueToday}</p>
+              </div>
+              <div className="bg-emerald-100 p-2 rounded-lg">
+                <Send className="h-5 w-5 text-emerald-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Falhas</p>
+                <p className="text-2xl font-bold text-red-600">{stats.failedQueue}</p>
+              </div>
+              <div className="bg-red-100 p-2 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Retentativas</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.retryingQueue}</p>
+              </div>
+              <div className="bg-yellow-100 p-2 rounded-lg">
+                <RefreshCw className="h-5 w-5 text-yellow-600" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Notifications */}
-        <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-            <CardTitle className="text-base">Notificações</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManualTrigger}
-              disabled={running}
-            >
-              <Play className="w-4 h-4 mr-1" />
-              {running ? "Executando..." : "Executar agora"}
-            </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="px-6 pb-3">
-              <Tabs value={filter} onValueChange={setFilter}>
-                <TabsList className="flex-wrap h-auto">
-                  <TabsTrigger value="all">Todas</TabsTrigger>
-                  <TabsTrigger value="D-3">D-3</TabsTrigger>
-                  <TabsTrigger value="D-1">D-1</TabsTrigger>
-                  <TabsTrigger value="D-0">D-0</TabsTrigger>
-                  <TabsTrigger value="confirmation">Confirmações</TabsTrigger>
-                  <TabsTrigger value="manual">Manuais</TabsTrigger>
-                  <TabsTrigger value="failed">Falhas</TabsTrigger>
-                </TabsList>
-                <TabsContent value={filter} className="mt-0" />
-              </Tabs>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <TabsList>
+              <TabsTrigger value="notifications" className="gap-2">
+                <History className="h-4 w-4" /> Histórico
+              </TabsTrigger>
+              <TabsTrigger value="queue" className="gap-2">
+                <ListFilter className="h-4 w-4" /> Fila de Envios
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="gap-2">
+                <DollarSign className="h-4 w-4" /> Pagamentos
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+                Atualizado às {lastRefreshed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleManualTrigger}
+                disabled={running}
+                className="bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary h-9"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                {running ? "Executando..." : "Executar agora"}
+              </Button>
             </div>
-            {loading ? (
-              <div className="p-6 text-sm text-muted-foreground">
-                Carregando...
-              </div>
-            ) : filtered.length === 0 ? (
-              <EmptyState
-                icon={Bell}
-                title="Nenhuma notificação"
-                subtitle="As notificações automáticas aparecem aqui após o envio diário."
-              />
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>WhatsApp</TableHead>
-                      <TableHead>Enviado em</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-12"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filtered.map((n) => (
-                      <TableRow key={n.id}>
-                        <TableCell className="font-medium">
-                          {n.customers
-                            ? n.customers.name || n.customers.username
-                            : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <NotifTypeBadge type={n.type} />
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {n.whatsapp_number || "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatDateTime(n.sent_at)}
-                        </TableCell>
-                        <TableCell>
-                          {n.success ? (
-                            <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-                              Enviado
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="destructive"
-                              title={n.error_message || ""}
-                            >
-                              Falhou
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {n.customers && (
-                            <Link
-                              to="/clientes/$id"
-                              params={{ id: n.customers.id }}
-                              className="text-muted-foreground hover:text-foreground"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Link>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+
+          <TabsContent value="notifications">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Histórico de Envios</CardTitle>
+                  <Tabs value={filter} onValueChange={setFilter} className="w-auto">
+                    <TabsList className="h-8 p-0.5 bg-muted/50">
+                      <TabsTrigger value="all" className="text-[10px] px-2 h-7">Todas</TabsTrigger>
+                      <TabsTrigger value="D-3" className="text-[10px] px-2 h-7">D-3</TabsTrigger>
+                      <TabsTrigger value="D-1" className="text-[10px] px-2 h-7">D-1</TabsTrigger>
+                      <TabsTrigger value="D-0" className="text-[10px] px-2 h-7">D-0</TabsTrigger>
+                      <TabsTrigger value="failed" className="text-[10px] px-2 h-7">Falhas</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loading && notifs.length === 0 ? (
+                  <div className="p-12 text-center text-sm text-muted-foreground">Carregando histórico...</div>
+                ) : filtered.length === 0 ? (
+                  <EmptyState
+                    icon={Bell}
+                    title="Nenhuma notificação"
+                    subtitle="As notificações automáticas aparecem aqui após o envio."
+                  />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>WhatsApp</TableHead>
+                          <TableHead>Enviado em</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="w-12"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filtered.map((n) => (
+                          <TableRow key={n.id}>
+                            <TableCell className="font-medium">
+                              {n.customers ? n.customers.name || n.customers.username : "—"}
+                            </TableCell>
+                            <TableCell><NotifTypeBadge type={n.type} /></TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{n.whatsapp_number || "—"}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{formatDateTime(n.sent_at)}</TableCell>
+                            <TableCell>
+                              {n.success ? (
+                                <Badge className="bg-emerald-100 text-emerald-800 border-none">Enviado</Badge>
+                              ) : (
+                                <Badge variant="destructive" className="border-none" title={n.error_message || ""}>Falhou</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {n.customers && (
+                                <Link to="/clientes/$id" params={{ id: n.customers.id }} className="text-muted-foreground hover:text-primary transition-colors">
+                                  <Eye className="w-4 h-4" />
+                                </Link>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="queue">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Fila de Envios</CardTitle>
+                  <Tabs value={queueFilter} onValueChange={setQueueFilter} className="w-auto">
+                    <TabsList className="h-8 p-0.5 bg-muted/50">
+                      <TabsTrigger value="all" className="text-[10px] px-2 h-7">Todas</TabsTrigger>
+                      <TabsTrigger value="pending" className="text-[10px] px-2 h-7">Pendentes</TabsTrigger>
+                      <TabsTrigger value="sent" className="text-[10px] px-2 h-7">Enviadas</TabsTrigger>
+                      <TabsTrigger value="failed" className="text-[10px] px-2 h-7">Falhas</TabsTrigger>
+                      <TabsTrigger value="retrying" className="text-[10px] px-2 h-7">Retentando</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loading && queue.length === 0 ? (
+                  <div className="p-12 text-center text-sm text-muted-foreground">Carregando fila...</div>
+                ) : filteredQueue.length === 0 ? (
+                  <EmptyState
+                    icon={ListFilter}
+                    title="Fila vazia"
+                    subtitle="Não há notificações aguardando envio no momento."
+                  />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Número</TableHead>
+                          <TableHead>Criado em</TableHead>
+                          <TableHead>Tentativas</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="w-12"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredQueue.map((q) => (
+                          <TableRow key={q.id}>
+                            <TableCell className="font-medium whitespace-nowrap">
+                              {q.customers ? q.customers.name || q.customers.username : "—"}
+                            </TableCell>
+                            <TableCell><NotifTypeBadge type={q.type} /></TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{q.whatsapp_number}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{formatDateTime(q.created_at)}</TableCell>
+                            <TableCell className="text-sm">
+                              <span className={cn(q.attempts > 1 ? "text-yellow-600 font-medium" : "text-muted-foreground")}>
+                                {q.attempts} / 3
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              {q.status === 'sent' ? (
+                                <Badge className="bg-emerald-100 text-emerald-800 border-none">Enviado</Badge>
+                              ) : q.status === 'failed' ? (
+                                <Badge variant="destructive" className="border-none" title={q.error_message || ""}>Falhou</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Na fila</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {q.status === 'failed' && (
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => handleRetry(q.id)} title="Retentar envio">
+                                    <RefreshCw className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {q.customers && (
+                                  <Link to="/clientes/$id" params={{ id: q.customers.id }} className="text-muted-foreground hover:text-primary transition-colors">
+                                    <Eye className="w-4 h-4" />
+                                  </Link>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="payments">
 
         {/* Payments */}
         <Card>
