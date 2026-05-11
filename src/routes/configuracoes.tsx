@@ -39,15 +39,22 @@ import { maskWhatsApp, unmaskDigits } from "@/lib/masks";
 import { cn } from "@/lib/utils";
 import { saveEvolutionConfig } from "@/lib/evolution.functions";
 import {
+  AlertCircle,
   AlertTriangle,
+  Calendar,
   CheckCircle2,
+  Clock,
   Copy,
   Eye,
   EyeOff,
   ExternalLink,
+  History,
   Loader2,
   MessageCircle,
+  Play,
+  Settings,
   Shield,
+  Trash2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/configuracoes")({
@@ -123,6 +130,21 @@ function ConfiguracoesPage() {
     d0: true,
     confirmed: true,
     sendHour: 9,
+  });
+
+  const [notifConfig, setNotifConfig] = useState({
+    enabled: true,
+    send_hour: 9,
+    before_expiration: [3, 1, 0],
+    after_expiration: [1, 3, 7],
+    templates: {
+      d3: "",
+      d1: "",
+      d0: "",
+      overdue_1: "",
+      overdue_3: "",
+      overdue_7: "",
+    } as Record<string, string>,
   });
 
   const [savingProfile, setSavingProfile] = useState(false);
@@ -297,6 +319,50 @@ function ConfiguracoesPage() {
     } finally {
       setSavingNotifications(false);
     }
+  };
+
+  const handleSaveNotifConfig = async () => {
+    setSavingNotifications(true);
+    try {
+      const result = await saveNotifConfig(notifConfig);
+      if (!result.success) throw new Error(result.error);
+
+      await refreshTenant();
+      toast.success("Configurações de notificação salvas!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao salvar configurações");
+    } finally {
+      setSavingNotifications(false);
+    }
+  };
+
+  const insertVariable = (type: string, variable: string) => {
+    setNotifConfig(prev => ({
+      ...prev,
+      templates: {
+        ...prev.templates,
+        [type]: prev.templates[type] + variable
+      }
+    }));
+  };
+
+  const restoreDefault = (type: string) => {
+    const defaults: Record<string, string> = {
+      d3: "Olá, {nome}! 👋\n\nSua assinatura IPTV vence em *3 dias* ({vencimento}).\n\n💰 Valor: *{valor}*\n\nPague pelo link:\n{link}\n\n✅ Renovação automática de 30 dias.",
+      d1: "⚠️ Olá, {nome}!\n\nSua assinatura IPTV vence *amanhã* ({vencimento}).\n\n💰 Valor: *{valor}*\n\nRenove agora:\n{link}\n\n✅ Renovação automática de 30 dias.",
+      d0: "🚨 Olá, {nome}!\n\nSua assinatura IPTV vence *hoje*!\n\n💰 Valor: *{valor}*\n\nPague agora:\n{link}\n\n✅ Renovação automática após pagamento.",
+      overdue_1: "❌ Olá, {nome}!\n\nSua assinatura IPTV venceu *ontem*.\n\n💰 Valor: *{valor}*\n\nRegularize agora:\n{link}",
+      overdue_3: "❌ Olá, {nome}!\n\nSua assinatura IPTV está vencida há *3 dias*.\n\n💰 Valor: *{valor}*\n\nEvite perder o acesso definitivamente:\n{link}",
+      overdue_7: "🚫 Olá, {nome}!\n\nSua assinatura IPTV está vencida há *7 dias*.\n\n💰 Valor: *{valor}*\n\nÚltimo aviso antes do cancelamento:\n{link}",
+    };
+
+    setNotifConfig(prev => ({
+      ...prev,
+      templates: {
+        ...prev.templates,
+        [type]: defaults[type]
+      }
+    }));
   };
 
   const handleChangePassword = async () => {
