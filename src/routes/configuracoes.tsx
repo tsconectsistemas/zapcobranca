@@ -33,6 +33,7 @@ import {
   deleteMyAccount,
   getSettingsSnapshot,
   saveNotificationPreferences,
+  saveNotificationConfig,
   saveTenantProfile,
 } from "@/lib/settings.functions";
 import { maskWhatsApp, unmaskDigits } from "@/lib/masks";
