@@ -33,21 +33,29 @@ import {
   deleteMyAccount,
   getSettingsSnapshot,
   saveNotificationPreferences,
+  saveNotificationConfig,
   saveTenantProfile,
 } from "@/lib/settings.functions";
 import { maskWhatsApp, unmaskDigits } from "@/lib/masks";
 import { cn } from "@/lib/utils";
 import { saveEvolutionConfig } from "@/lib/evolution.functions";
 import {
+  AlertCircle,
   AlertTriangle,
+  Calendar,
   CheckCircle2,
+  Clock,
   Copy,
   Eye,
   EyeOff,
   ExternalLink,
+  History,
   Loader2,
   MessageCircle,
+  Play,
+  Settings,
   Shield,
+  Trash2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/configuracoes")({
@@ -96,6 +104,7 @@ function ConfiguracoesPage() {
   const loadSettings = useServerFn(getSettingsSnapshot);
   const saveProfile = useServerFn(saveTenantProfile);
   const saveNotifications = useServerFn(saveNotificationPreferences);
+  const saveNotifConfig = useServerFn(saveNotificationConfig);
   const saveEvolution = useServerFn(saveEvolutionConfig);
   const deleteAccount = useServerFn(deleteMyAccount);
 
@@ -123,6 +132,21 @@ function ConfiguracoesPage() {
     d0: true,
     confirmed: true,
     sendHour: 9,
+  });
+
+  const [notifConfig, setNotifConfig] = useState({
+    enabled: true,
+    send_hour: 9,
+    before_expiration: [3, 1, 0],
+    after_expiration: [1, 3, 7],
+    templates: {
+      d3: "",
+      d1: "",
+      d0: "",
+      overdue_1: "",
+      overdue_3: "",
+      overdue_7: "",
+    } as Record<string, string>,
   });
 
   const [savingProfile, setSavingProfile] = useState(false);
@@ -297,6 +321,50 @@ function ConfiguracoesPage() {
     } finally {
       setSavingNotifications(false);
     }
+  };
+
+  const handleSaveNotifConfig = async () => {
+    setSavingNotifications(true);
+    try {
+      const result = await saveNotifConfig({ data: notifConfig });
+      if (!result.success) throw new Error(result.error);
+
+      await refreshTenant();
+      toast.success("Configurações de notificação salvas!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao salvar configurações");
+    } finally {
+      setSavingNotifications(false);
+    }
+  };
+
+  const insertVariable = (type: string, variable: string) => {
+    setNotifConfig(prev => ({
+      ...prev,
+      templates: {
+        ...prev.templates,
+        [type]: prev.templates[type] + variable
+      }
+    }));
+  };
+
+  const restoreDefault = (type: string) => {
+    const defaults: Record<string, string> = {
+      d3: "Olá, {nome}! 👋\n\nSua assinatura IPTV vence em *3 dias* ({vencimento}).\n\n💰 Valor: *{valor}*\n\nPague pelo link:\n{link}\n\n✅ Renovação automática de 30 dias.",
+      d1: "⚠️ Olá, {nome}!\n\nSua assinatura IPTV vence *amanhã* ({vencimento}).\n\n💰 Valor: *{valor}*\n\nRenove agora:\n{link}\n\n✅ Renovação automática de 30 dias.",
+      d0: "🚨 Olá, {nome}!\n\nSua assinatura IPTV vence *hoje*!\n\n💰 Valor: *{valor}*\n\nPague agora:\n{link}\n\n✅ Renovação automática após pagamento.",
+      overdue_1: "❌ Olá, {nome}!\n\nSua assinatura IPTV venceu *ontem*.\n\n💰 Valor: *{valor}*\n\nRegularize agora:\n{link}",
+      overdue_3: "❌ Olá, {nome}!\n\nSua assinatura IPTV está vencida há *3 dias*.\n\n💰 Valor: *{valor}*\n\nEvite perder o acesso definitivamente:\n{link}",
+      overdue_7: "🚫 Olá, {nome}!\n\nSua assinatura IPTV está vencida há *7 dias*.\n\n💰 Valor: *{valor}*\n\nÚltimo aviso antes do cancelamento:\n{link}",
+    };
+
+    setNotifConfig(prev => ({
+      ...prev,
+      templates: {
+        ...prev.templates,
+        [type]: defaults[type]
+      }
+    }));
   };
 
   const handleChangePassword = async () => {
@@ -589,60 +657,179 @@ function ConfiguracoesPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="xl:col-span-2">
             <CardHeader>
-              <CardTitle>Notificações Automáticas</CardTitle>
-              <CardDescription>Defina quais lembretes serão enviados automaticamente.</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Notificações Automáticas</CardTitle>
+                  <CardDescription>Configure o sistema de avisos e cobranças via WhatsApp.</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={cn("text-sm font-medium", notifConfig.enabled ? "text-success" : "text-destructive")}>
+                    {notifConfig.enabled ? "Ativo" : "Pausado"}
+                  </span>
+                  <Switch
+                    checked={notifConfig.enabled}
+                    onCheckedChange={(checked) => setNotifConfig(prev => ({ ...prev, enabled: checked }))}
+                  />
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-5">
-              <NotificationSwitch
-                label="Notificar 3 dias antes do vencimento"
-                checked={notificationSettings.d3}
-                onCheckedChange={(checked) => setNotificationSettings((prev) => ({ ...prev, d3: checked }))}
-              />
-              <NotificationSwitch
-                label="Notificar 1 dia antes do vencimento"
-                checked={notificationSettings.d1}
-                onCheckedChange={(checked) => setNotificationSettings((prev) => ({ ...prev, d1: checked }))}
-              />
-              <NotificationSwitch
-                label="Notificar no dia do vencimento"
-                checked={notificationSettings.d0}
-                onCheckedChange={(checked) => setNotificationSettings((prev) => ({ ...prev, d0: checked }))}
-              />
-              <NotificationSwitch
-                label="Notificar confirmação de pagamento"
-                checked={notificationSettings.confirmed}
-                onCheckedChange={(checked) =>
-                  setNotificationSettings((prev) => ({ ...prev, confirmed: checked }))
-                }
-              />
+            <CardContent className="space-y-6">
+              {!notifConfig.enabled && (
+                <div className="flex items-center gap-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-yellow-600 dark:text-yellow-500">
+                  <AlertCircle className="h-5 w-5" />
+                  <p className="text-sm font-medium">Todas as notificações automáticas estão pausadas no momento.</p>
+                </div>
+              )}
 
-              <div className="space-y-1.5">
-                <Label>Horário de envio das notificações</Label>
-                <Select
-                  value={String(notificationSettings.sendHour)}
-                  onValueChange={(value) =>
-                    setNotificationSettings((prev) => ({ ...prev, sendHour: Number(value) }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">07:00</SelectItem>
-                    <SelectItem value="8">08:00</SelectItem>
-                    <SelectItem value="9">09:00</SelectItem>
-                    <SelectItem value="10">10:00</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">As notificações serão enviadas neste horário</p>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Horário do disparo diário
+                    </Label>
+                    <Select
+                      value={String(notifConfig.send_hour)}
+                      onValueChange={(val) => setNotifConfig(prev => ({ ...prev, send_hour: Number(val) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7">07:00</SelectItem>
+                        <SelectItem value="8">08:00</SelectItem>
+                        <SelectItem value="9">09:00</SelectItem>
+                        <SelectItem value="10">10:00</SelectItem>
+                        <SelectItem value="11">11:00</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Fuso horário: Brasília (BRT)</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Avisos antes do vencimento
+                    </Label>
+                    <div className="space-y-2">
+                      {[
+                        { day: 7, label: "7 dias antes" },
+                        { day: 3, label: "3 dias antes" },
+                        { day: 1, label: "1 dia antes" },
+                        { day: 0, label: "No dia do vencimento (D-0)" },
+                      ].map((item) => (
+                        <div key={item.day} className="flex items-center gap-2">
+                          <Switch
+                            id={`before-${item.day}`}
+                            checked={notifConfig.before_expiration.includes(item.day)}
+                            onCheckedChange={(checked) => {
+                              setNotifConfig(prev => ({
+                                ...prev,
+                                before_expiration: checked 
+                                  ? [...prev.before_expiration, item.day]
+                                  : prev.before_expiration.filter(d => d !== item.day)
+                              }))
+                            }}
+                          />
+                          <Label htmlFor={`before-${item.day}`} className="text-sm cursor-pointer">{item.label}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      Cobranças após vencimento
+                    </Label>
+                    <div className="space-y-2">
+                      {[
+                        { day: 1, label: "1 dia após vencer" },
+                        { day: 3, label: "3 dias após vencer" },
+                        { day: 7, label: "7 dias após vencer" },
+                      ].map((item) => (
+                        <div key={item.day} className="flex items-center gap-2">
+                          <Switch
+                            id={`after-${item.day}`}
+                            checked={notifConfig.after_expiration.includes(item.day)}
+                            onCheckedChange={(checked) => {
+                              setNotifConfig(prev => ({
+                                ...prev,
+                                after_expiration: checked 
+                                  ? [...prev.after_expiration, item.day]
+                                  : prev.after_expiration.filter(d => d !== item.day)
+                              }))
+                            }}
+                          />
+                          <Label htmlFor={`after-${item.day}`} className="text-sm cursor-pointer">{item.label}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Personalizar mensagens
+                  </Label>
+                  <Accordion type="single" collapsible className="w-full">
+                    {[
+                      { id: 'd3', label: "📅 Vencimento em 3 dias (D-3)" },
+                      { id: 'd1', label: "⚠️ Vencimento em 1 dia (D-1)" },
+                      { id: 'd0', label: "🚨 Vencimento hoje (D-0)" },
+                      { id: 'overdue_1', label: "❌ Vencido há 1 dia" },
+                      { id: 'overdue_3', label: "❌ Vencido há 3 dias" },
+                      { id: 'overdue_7', label: "🚫 Vencido há 7 dias" },
+                    ].map((type) => (
+                      <AccordionItem key={type.id} value={type.id}>
+                        <AccordionTrigger className="text-sm py-3">{type.label}</AccordionTrigger>
+                        <AccordionContent className="space-y-3 pt-1">
+                          <textarea
+                            className="w-full min-h-[120px] rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            value={notifConfig.templates[type.id] || ""}
+                            onChange={(e) => {
+                              setNotifConfig(prev => ({
+                                ...prev,
+                                templates: { ...prev.templates, [type.id]: e.target.value }
+                              }))
+                            }}
+                            placeholder="Digite sua mensagem..."
+                          />
+                          <div className="flex flex-wrap gap-1.5">
+                            {['{nome}', '{valor}', '{vencimento}', '{link}', '{revenda}'].map(variable => (
+                              <button
+                                key={variable}
+                                onClick={() => insertVariable(type.id, variable)}
+                                className="px-2 py-0.5 rounded border bg-muted hover:bg-muted/80 text-[10px] font-mono transition-colors"
+                              >
+                                {variable}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-between gap-2 pt-2">
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="h-auto p-0 text-xs text-muted-foreground"
+                              onClick={() => restoreDefault(type.id)}
+                            >
+                              <History className="mr-1 h-3 w-3" /> Restaurar padrão
+                            </Button>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </div>
               </div>
 
-              <div className="flex justify-end">
-                <Button onClick={handleSaveNotifications} disabled={savingNotifications || loading}>
-                  {savingNotifications ? <Loader2 className="animate-spin" /> : null}
-                  Salvar preferências
+              <div className="flex justify-end pt-4 border-t">
+                <Button onClick={handleSaveNotifConfig} disabled={savingNotifications || loading} className="w-full md:w-auto bg-success hover:bg-success/90">
+                  {savingNotifications ? <Loader2 className="animate-spin mr-2" /> : null}
+                  Salvar configurações de notificação
                 </Button>
               </div>
             </CardContent>

@@ -20,7 +20,15 @@ const notificationSettingsSchema = z.object({
   d1: z.boolean(),
   d0: z.boolean(),
   confirmed: z.boolean(),
-  sendHour: z.number().int().refine((value) => [7, 8, 9, 10].includes(value)),
+  sendHour: z.number().int().refine((value) => [7, 8, 9, 10, 11].includes(value)),
+});
+
+const notificationConfigSchema = z.object({
+  enabled: z.boolean(),
+  send_hour: z.number(),
+  before_expiration: z.array(z.number()),
+  after_expiration: z.array(z.number()),
+  templates: z.record(z.string(), z.string()),
 });
 
 const deleteAccountSchema = z.object({
@@ -50,7 +58,7 @@ export const getSettingsSnapshot = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("tenants")
         .select(
-          "id, company_name, email, whatsapp, logo_url, plan, max_customers, active, notification_settings",
+          "id, company_name, email, whatsapp, logo_url, plan, max_customers, active, notification_settings, notification_config",
         )
         .eq("id", tenant.id)
         .maybeSingle(),
@@ -155,6 +163,27 @@ export const saveNotificationPreferences = createServerFn({ method: "POST" })
       _confirmed: data.confirmed,
       _send_hour: data.sendHour,
     });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  });
+
+export const saveNotificationConfig = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => notificationConfigSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const tenant = await getTenantId(context.userId);
+
+    const { error } = await supabaseAdmin
+      .from("tenants")
+      .update({
+        notification_config: data as any,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", tenant.id);
 
     if (error) {
       return { success: false, error: error.message };
