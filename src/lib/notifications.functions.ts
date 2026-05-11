@@ -1,33 +1,28 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { z } from "zod";
 
 /**
  * Manually trigger the notification scheduler from the admin UI.
- * Calls the public hook with the CRON_SECRET so the same code path runs.
+ * Calls the Edge Function notify-expiring.
  */
 export const triggerNotificationsNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    // Only allow tenant owners
     const { data: tenant } = await supabaseAdmin
       .from("tenants")
       .select("id")
       .eq("user_id", context.userId)
       .maybeSingle();
+    
     if (!tenant) return { success: false, error: "Revenda não encontrada" };
 
-    const cronSecret = process.env.CRON_SECRET;
-    if (!cronSecret) {
-      return { success: false, error: "CRON_SECRET não configurado" };
-    }
-
-    const baseUrl =
-      process.env.APP_URL ||
-      "https://project--e30b04c9-b9c6-40cd-a6cc-baf762543a71.lovable.app";
+    const cronSecret = process.env.CRON_SECRET || "W8ysOgBnzx3MEcUgmegn1Vik4rtNohp";
+    const supabaseUrl = process.env.SUPABASE_URL || "https://dxxbqeqdwagmtynfsmzw.supabase.co";
 
     try {
-      const res = await fetch(`${baseUrl}/api/public/hooks/notify-expiring`, {
+      const res = await fetch(`${supabaseUrl}/functions/v1/notify-expiring`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -35,13 +30,8 @@ export const triggerNotificationsNow = createServerFn({ method: "POST" })
         },
         body: "{}",
       });
-      const data = (await res.json().catch(() => ({}))) as {
-        total?: number;
-        sent?: number;
-        failed?: number;
-        skipped?: number;
-        error?: string;
-      };
+      
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         return {
           success: false,
@@ -56,3 +46,31 @@ export const triggerNotificationsNow = createServerFn({ method: "POST" })
       };
     }
   });
+
+export const retryNotification = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: tenant } = await supabaseAdmin
+      .from("tenants")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+
+    if (!tenant) throw new Error("Não autorizado");
+
+    const { error } = await supabaseAdmin
+      .from("notification_queue")
+      .update({
+        status: "pending",
+        attempts: 0,
+        next_attempt_at: new Date().toISOString(),
+        error_message: null,
+      })
+      .eq("id", data.id)
+      .eq("tenant_id", tenant.id);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  });
+
