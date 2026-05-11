@@ -564,7 +564,9 @@ function CobrancasPage() {
               </div>
             )}
           </CardContent>
-        </Card>
+          </Card>
+          </TabsContent>
+        </Tabs>
       </AppShell>
     </PrivateRoute>
   );
