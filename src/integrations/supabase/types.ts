@@ -88,6 +88,72 @@ export type Database = {
           },
         ]
       }
+      notification_queue: {
+        Row: {
+          attempts: number | null
+          created_at: string | null
+          customer_id: string | null
+          error_message: string | null
+          id: string
+          last_attempt_at: string | null
+          max_attempts: number | null
+          message: string
+          next_attempt_at: string | null
+          sent_at: string | null
+          status: string | null
+          tenant_id: string | null
+          type: string
+          whatsapp_number: string
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string | null
+          customer_id?: string | null
+          error_message?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number | null
+          message: string
+          next_attempt_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          type: string
+          whatsapp_number: string
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string | null
+          customer_id?: string | null
+          error_message?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number | null
+          message?: string
+          next_attempt_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          type?: string
+          whatsapp_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_queue_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_queue_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           customer_id: string
@@ -342,6 +408,7 @@ export type Database = {
           id: string
           logo_url: string | null
           max_customers: number | null
+          notification_config: Json | null
           notification_settings: Json
           plan: string | null
           plan_expires_at: string | null
@@ -358,6 +425,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           max_customers?: number | null
+          notification_config?: Json | null
           notification_settings?: Json
           plan?: string | null
           plan_expires_at?: string | null
@@ -374,6 +442,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           max_customers?: number | null
+          notification_config?: Json | null
           notification_settings?: Json
           plan?: string | null
           plan_expires_at?: string | null
