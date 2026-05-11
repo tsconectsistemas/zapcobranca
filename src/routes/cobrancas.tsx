@@ -316,7 +316,7 @@ function CobrancasPage() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <TabsList>
               <TabsTrigger value="notifications" className="gap-2">
-                <History className="h-4 w-4" /> Histórico
+                <HistoryIcon className="h-4 w-4" /> Histórico
               </TabsTrigger>
               <TabsTrigger value="queue" className="gap-2">
                 <ListFilter className="h-4 w-4" /> Fila de Envios
