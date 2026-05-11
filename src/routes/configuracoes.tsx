@@ -103,6 +103,7 @@ function ConfiguracoesPage() {
   const loadSettings = useServerFn(getSettingsSnapshot);
   const saveProfile = useServerFn(saveTenantProfile);
   const saveNotifications = useServerFn(saveNotificationPreferences);
+  const saveNotifConfig = useServerFn(saveNotificationConfig);
   const saveEvolution = useServerFn(saveEvolutionConfig);
   const deleteAccount = useServerFn(deleteMyAccount);
 
