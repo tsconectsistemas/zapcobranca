@@ -180,7 +180,7 @@ export const saveNotificationConfig = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("tenants")
       .update({
-        notification_config: data,
+        notification_config: data as any,
         updated_at: new Date().toISOString(),
       })
       .eq("id", tenant.id);
