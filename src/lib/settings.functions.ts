@@ -28,7 +28,7 @@ const notificationConfigSchema = z.object({
   send_hour: z.number(),
   before_expiration: z.array(z.number()),
   after_expiration: z.array(z.number()),
-  templates: z.record(z.string()),
+  templates: z.record(z.string(), z.string()),
 });
 
 const deleteAccountSchema = z.object({
