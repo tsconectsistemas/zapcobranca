@@ -6,21 +6,26 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 )
 
+const CRON_SECRET = Deno.env.get('CRON_SECRET') || 'W8ysOgBnzx3MEcUgmegn1Vik4rtNohp'
+
 serve(async (req) => {
   const authHeader = req.headers.get('Authorization') || ''
-  const secret = Deno.env.get('CRON_SECRET') || ''
-  if (secret && authHeader !== `Bearer ${secret}`) {
+  if (authHeader !== `Bearer ${CRON_SECRET}`) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  // Re-use processQueue logic
+  // Process pending notifications in the queue
   const now = new Date().toISOString()
   const { data: queue } = await supabase
     .from('notification_queue')
     .select(`
       *,
       tenants (
-        evolution_api_url, evolution_api_key, whatsapp,
+        whatsapp,
+        tenant_secrets (
+          evolution_api_url,
+          evolution_api_key
+        ),
         whatsapp_sessions ( instance_name, status )
       )
     `)
@@ -37,20 +42,41 @@ serve(async (req) => {
       ? item.tenants[0] : item.tenants
     const session = Array.isArray(tenant?.whatsapp_sessions)
       ? tenant.whatsapp_sessions[0] : tenant?.whatsapp_sessions
+    const secrets = Array.isArray(tenant?.tenant_secrets)
+      ? tenant.tenant_secrets[0] : tenant?.tenant_secrets
 
-    if (!session?.instance_name || session.status !== 'connected') {
+    const attempts = item.attempts + 1
+
+    if (!session?.instance_name || session.status !== 'connected' || !secrets?.evolution_api_url) {
       failed++
+      // If we can't send, we increment attempts and potentially mark as failed
+      if (attempts >= item.max_attempts) {
+        await supabase
+          .from('notification_queue')
+          .update({ 
+            status: 'failed', 
+            attempts, 
+            last_attempt_at: now, 
+            error_message: !secrets?.evolution_api_url ? 'API não configurada' : 'WhatsApp desconectado' 
+          })
+          .eq('id', item.id)
+      } else {
+        await supabase
+          .from('notification_queue')
+          .update({ attempts, last_attempt_at: now })
+          .eq('id', item.id)
+      }
       continue
     }
 
     try {
       const response = await fetch(
-        `${tenant.evolution_api_url}/message/sendText/${session.instance_name}`,
+        `${secrets.evolution_api_url}/message/sendText/${session.instance_name}`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': tenant.evolution_api_key || '',
+            'apikey': secrets.evolution_api_key || '',
           },
           body: JSON.stringify({
             number: item.whatsapp_number,
@@ -65,7 +91,7 @@ serve(async (req) => {
           .update({ 
             status: 'sent', 
             sent_at: now,
-            attempts: item.attempts + 1,
+            attempts,
             last_attempt_at: now 
           })
           .eq('id', item.id)
@@ -77,12 +103,11 @@ serve(async (req) => {
           message: item.message,
           whatsapp_number: item.whatsapp_number,
           success: true,
+          sent_at: now
         })
         sent++
       } else {
         failed++
-        // Log attempt and reschedule or fail
-        const attempts = item.attempts + 1
         const errData = await response?.json().catch(() => ({}))
         const errMsg = errData?.message || `HTTP ${response?.status}`
 
@@ -91,6 +116,17 @@ serve(async (req) => {
             .from('notification_queue')
             .update({ status: 'failed', attempts, last_attempt_at: now, error_message: errMsg })
             .eq('id', item.id)
+          
+          await supabase.from('notifications').insert({
+            tenant_id: item.tenant_id,
+            customer_id: item.customer_id,
+            type: item.type,
+            message: item.message,
+            whatsapp_number: item.whatsapp_number,
+            success: false,
+            error_message: errMsg,
+            sent_at: now
+          })
         } else {
           const backoff = attempts === 1 ? 15 : 60
           const nextAttempt = new Date(Date.now() + backoff * 60 * 1000).toISOString()
@@ -102,6 +138,18 @@ serve(async (req) => {
       }
     } catch (e) {
       failed++
+      const errMsg = String(e)
+      if (attempts >= item.max_attempts) {
+        await supabase
+          .from('notification_queue')
+          .update({ status: 'failed', attempts, last_attempt_at: now, error_message: errMsg })
+          .eq('id', item.id)
+      } else {
+        await supabase
+          .from('notification_queue')
+          .update({ attempts, last_attempt_at: now, error_message: errMsg })
+          .eq('id', item.id)
+      }
     }
 
     await new Promise(r => setTimeout(r, 800))

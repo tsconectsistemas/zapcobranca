@@ -7,12 +7,12 @@ const supabase = createClient(
 )
 
 const APP_URL = Deno.env.get('APP_URL') || 'https://zapcobranca.com.br'
-const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
+const CRON_SECRET = 'W8ysOgBnzx3MEcUgmegn1Vik4rtNohp'
 
 serve(async (req) => {
   // Security check
   const authHeader = req.headers.get('Authorization') || ''
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${CRON_SECRET}`) {
     return new Response('Unauthorized', { status: 401 })
   }
 
@@ -25,8 +25,10 @@ serve(async (req) => {
     .from('tenants')
     .select(`
       id, company_name, whatsapp,
-      evolution_api_url, evolution_api_key,
       notification_config,
+      tenant_secrets (
+        evolution_api_url, evolution_api_key
+      ),
       whatsapp_sessions (
         instance_name, status
       )
@@ -172,9 +174,11 @@ async function processQueue() {
     .select(`
       *,
       tenants (
-        evolution_api_url,
-        evolution_api_key,
         whatsapp,
+        tenant_secrets (
+          evolution_api_url,
+          evolution_api_key
+        ),
         whatsapp_sessions ( instance_name, status )
       )
     `)
@@ -189,6 +193,8 @@ async function processQueue() {
       ? item.tenants[0] : item.tenants
     const session = Array.isArray(tenant?.whatsapp_sessions)
       ? tenant.whatsapp_sessions[0] : tenant?.whatsapp_sessions
+    const secrets = Array.isArray(tenant?.tenant_secrets)
+      ? tenant.tenant_secrets[0] : tenant?.tenant_secrets
 
     const attempts = item.attempts + 1
 
@@ -214,12 +220,12 @@ async function processQueue() {
     try {
       // Send via Evolution API v2
       const response = await fetch(
-        `${tenant.evolution_api_url}/message/sendText/${session.instance_name}`,
+        `${secrets?.evolution_api_url}/message/sendText/${session.instance_name}`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': tenant.evolution_api_key || '',
+            'apikey': secrets?.evolution_api_key || '',
           },
           body: JSON.stringify({
             number: item.whatsapp_number,
@@ -332,7 +338,10 @@ async function alertTenantFailure(
   tenant: any,
   error: string
 ) {
-  if (!tenant?.whatsapp || !tenant?.evolution_api_url) return
+  const secrets = Array.isArray(tenant?.tenant_secrets)
+    ? tenant.tenant_secrets[0] : tenant?.tenant_secrets
+
+  if (!tenant?.whatsapp || !secrets?.evolution_api_url) return
 
   const session = Array.isArray(tenant.whatsapp_sessions)
     ? tenant.whatsapp_sessions[0]
@@ -361,12 +370,12 @@ async function alertTenantFailure(
   const tenantNumber = formatNumber(tenant.whatsapp)
 
   await fetch(
-    `${tenant.evolution_api_url}/message/sendText/${session.instance_name}`,
+    `${secrets.evolution_api_url}/message/sendText/${session.instance_name}`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': tenant.evolution_api_key || '',
+        'apikey': secrets.evolution_api_key || '',
       },
       body: JSON.stringify({
         number: tenantNumber,
