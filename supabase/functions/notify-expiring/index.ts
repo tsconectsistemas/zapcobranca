@@ -123,7 +123,7 @@ serve(async (req) => {
         .select('id')
         .eq('customer_id', customer.id)
         .eq('type', target.type)
-        .gte('sent_at', toDateStr(today) + 'T00:00:00Z')
+        .gte('sent_at', toDateStr(todayBR) + 'T00:00:00Z')
         .maybeSingle()
 
       if (existing) continue
