@@ -17,8 +17,15 @@ serve(async (req) => {
   }
 
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const toDateStr = (d: Date) => d.toISOString().split('T')[0]
+  // Usar fuso horário do Brasil (Brasília) para garantir que a data de hoje bata com o banco
+  const todayBR = new Date(today.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
+  todayBR.setHours(0, 0, 0, 0)
+  const toDateStr = (d: Date) => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
   // Fetch all active tenants with WhatsApp connected
   const { data: tenants, error: tenantsError } = await supabase
@@ -76,15 +83,15 @@ serve(async (req) => {
 
     // Build target dates for before expiration (D-3, D-1, D-0)
     const beforeDates = beforeDays.map(d => {
-      const date = new Date(today)
-      date.setDate(today.getDate() + d)
+      const date = new Date(todayBR)
+      date.setDate(todayBR.getDate() + d)
       return { days: d, dateStr: toDateStr(date), type: `D-${d}` }
     })
 
     // Build target dates for after expiration (D+1, D+3, D+7)
     const afterDates = afterDays.map(d => {
-      const date = new Date(today)
-      date.setDate(today.getDate() - d)
+      const date = new Date(todayBR)
+      date.setDate(todayBR.getDate() - d)
       return { days: d, dateStr: toDateStr(date), type: `overdue_${d}` }
     })
 
@@ -116,7 +123,7 @@ serve(async (req) => {
         .select('id')
         .eq('customer_id', customer.id)
         .eq('type', target.type)
-        .gte('sent_at', toDateStr(today) + 'T00:00:00Z')
+        .gte('sent_at', toDateStr(todayBR) + 'T00:00:00Z')
         .maybeSingle()
 
       if (existing) continue
@@ -309,8 +316,9 @@ async function processQueue() {
       }
     }
 
-    // Small delay between sends to avoid WhatsApp blocks
-    await new Promise(r => setTimeout(r, 800))
+    // Delay randômico entre 2 e 30 segundos para evitar bloqueios do WhatsApp
+    const randomDelay = Math.floor(Math.random() * (30000 - 2000 + 1) + 2000)
+    await new Promise(r => setTimeout(r, randomDelay))
   }
 }
 

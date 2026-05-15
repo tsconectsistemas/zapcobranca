@@ -152,7 +152,8 @@ serve(async (req) => {
       }
     }
 
-    await new Promise(r => setTimeout(r, 800))
+    const randomDelay = Math.floor(Math.random() * (30000 - 2000 + 1) + 2000)
+    await new Promise(r => setTimeout(r, randomDelay))
   }
 
   return new Response(
