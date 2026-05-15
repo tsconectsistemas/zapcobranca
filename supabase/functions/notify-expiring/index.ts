@@ -13,7 +13,7 @@ serve(async (req) => {
   // Security check
   const authHeader = req.headers.get('Authorization') || ''
   if (authHeader !== `Bearer ${CRON_SECRET}`) {
-    console.error('Unauthorized attempt to trigger notifications')
+    console.error(`Unauthorized. Header length: ${authHeader.length}, Secret length: ${CRON_SECRET.length}`)
     return new Response('Unauthorized', { status: 401 })
   }
 
