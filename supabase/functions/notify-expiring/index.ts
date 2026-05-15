@@ -12,7 +12,8 @@ const CRON_SECRET = Deno.env.get('CRON_SECRET') || 'W8ysOgBnzx3MEcUgmegn1Vik4rtN
 serve(async (req) => {
   // Security check
   const authHeader = req.headers.get('Authorization') || ''
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+    console.error('Unauthorized attempt to trigger notifications')
     return new Response('Unauthorized', { status: 401 })
   }
 
