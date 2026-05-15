@@ -83,15 +83,15 @@ serve(async (req) => {
 
     // Build target dates for before expiration (D-3, D-1, D-0)
     const beforeDates = beforeDays.map(d => {
-      const date = new Date(today)
-      date.setDate(today.getDate() + d)
+      const date = new Date(todayBR)
+      date.setDate(todayBR.getDate() + d)
       return { days: d, dateStr: toDateStr(date), type: `D-${d}` }
     })
 
     // Build target dates for after expiration (D+1, D+3, D+7)
     const afterDates = afterDays.map(d => {
-      const date = new Date(today)
-      date.setDate(today.getDate() - d)
+      const date = new Date(todayBR)
+      date.setDate(todayBR.getDate() - d)
       return { days: d, dateStr: toDateStr(date), type: `overdue_${d}` }
     })
 
