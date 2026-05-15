@@ -309,8 +309,9 @@ async function processQueue() {
       }
     }
 
-    // Small delay between sends to avoid WhatsApp blocks
-    await new Promise(r => setTimeout(r, 800))
+    // Delay randômico entre 2 e 30 segundos para evitar bloqueios do WhatsApp
+    const randomDelay = Math.floor(Math.random() * (30000 - 2000 + 1) + 2000)
+    await new Promise(r => setTimeout(r, randomDelay))
   }
 }
 
