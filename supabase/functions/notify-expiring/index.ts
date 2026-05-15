@@ -17,8 +17,15 @@ serve(async (req) => {
   }
 
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const toDateStr = (d: Date) => d.toISOString().split('T')[0]
+  // Usar fuso horário do Brasil (Brasília) para garantir que a data de hoje bata com o banco
+  const todayBR = new Date(today.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
+  todayBR.setHours(0, 0, 0, 0)
+  const toDateStr = (d: Date) => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
   // Fetch all active tenants with WhatsApp connected
   const { data: tenants, error: tenantsError } = await supabase
