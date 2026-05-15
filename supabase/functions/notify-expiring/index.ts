@@ -193,6 +193,8 @@ async function processQueue() {
       ? item.tenants[0] : item.tenants
     const session = Array.isArray(tenant?.whatsapp_sessions)
       ? tenant.whatsapp_sessions[0] : tenant?.whatsapp_sessions
+    const secrets = Array.isArray(tenant?.tenant_secrets)
+      ? tenant.tenant_secrets[0] : tenant?.tenant_secrets
 
     const attempts = item.attempts + 1
 
