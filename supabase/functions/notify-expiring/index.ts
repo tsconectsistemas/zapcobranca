@@ -101,7 +101,7 @@ serve(async (req) => {
       `)
       .eq('tenant_id', tenant.id)
       .in('expiration_date', allDateStrings)
-      .not('whatsapp', 'is', null)
+      // .not('whatsapp', 'is', null) // Commenting out to check if it's the culprit
       .neq('status', 'cancelled')
 
     for (const customer of customers || []) {
