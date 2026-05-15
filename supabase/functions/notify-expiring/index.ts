@@ -220,7 +220,7 @@ async function processQueue() {
     try {
       // Send via Evolution API v2
       const response = await fetch(
-        `${tenant.evolution_api_url}/message/sendText/${session.instance_name}`,
+        `${secrets?.evolution_api_url}/message/sendText/${session.instance_name}`,
         {
           method: 'POST',
           headers: {
