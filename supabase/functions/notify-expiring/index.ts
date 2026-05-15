@@ -174,9 +174,11 @@ async function processQueue() {
     .select(`
       *,
       tenants (
-        evolution_api_url,
-        evolution_api_key,
         whatsapp,
+        tenant_secrets (
+          evolution_api_url,
+          evolution_api_key
+        ),
         whatsapp_sessions ( instance_name, status )
       )
     `)
