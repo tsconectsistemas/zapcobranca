@@ -25,8 +25,10 @@ serve(async (req) => {
     .from('tenants')
     .select(`
       id, company_name, whatsapp,
-      evolution_api_url, evolution_api_key,
       notification_config,
+      tenant_secrets (
+        evolution_api_url, evolution_api_key
+      ),
       whatsapp_sessions (
         instance_name, status
       )
