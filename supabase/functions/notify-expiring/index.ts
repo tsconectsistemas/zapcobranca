@@ -7,7 +7,7 @@ const supabase = createClient(
 )
 
 const APP_URL = Deno.env.get('APP_URL') || 'https://zapcobranca.com.br'
-const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
+const CRON_SECRET = Deno.env.get('CRON_SECRET') || 'W8ysOgBnzx3MEcUgmegn1Vik4rtNohp'
 
 serve(async (req) => {
   // Security check
