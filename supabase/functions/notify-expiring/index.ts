@@ -338,7 +338,10 @@ async function alertTenantFailure(
   tenant: any,
   error: string
 ) {
-  if (!tenant?.whatsapp || !tenant?.evolution_api_url) return
+  const secrets = Array.isArray(tenant?.tenant_secrets)
+    ? tenant.tenant_secrets[0] : tenant?.tenant_secrets
+
+  if (!tenant?.whatsapp || !secrets?.evolution_api_url) return
 
   const session = Array.isArray(tenant.whatsapp_sessions)
     ? tenant.whatsapp_sessions[0]
