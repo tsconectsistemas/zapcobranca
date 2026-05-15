@@ -225,7 +225,7 @@ async function processQueue() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': tenant.evolution_api_key || '',
+            'apikey': secrets?.evolution_api_key || '',
           },
           body: JSON.stringify({
             number: item.whatsapp_number,
