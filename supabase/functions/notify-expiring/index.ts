@@ -370,12 +370,12 @@ async function alertTenantFailure(
   const tenantNumber = formatNumber(tenant.whatsapp)
 
   await fetch(
-    `${tenant.evolution_api_url}/message/sendText/${session.instance_name}`,
+    `${secrets.evolution_api_url}/message/sendText/${session.instance_name}`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': tenant.evolution_api_key || '',
+        'apikey': secrets.evolution_api_key || '',
       },
       body: JSON.stringify({
         number: tenantNumber,
