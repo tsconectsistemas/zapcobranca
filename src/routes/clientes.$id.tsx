@@ -778,6 +778,13 @@ ${customer.pix_emv_payload ? `Ou copie o código PIX abaixo:\n${customer.pix_emv
           onSent={fetchAll}
         />
 
+        <ManualRenewalModal
+          open={renewalOpen}
+          onOpenChange={setRenewalOpen}
+          customer={customer}
+          onDone={fetchAll}
+        />
+
         <ConfirmDialog
           open={confirm?.kind === "suspend"}
           onOpenChange={(o) => !o && setConfirm(null)}
