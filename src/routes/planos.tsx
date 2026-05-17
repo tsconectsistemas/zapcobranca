@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import toast from "react-hot-toast";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
