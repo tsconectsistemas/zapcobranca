@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import toast from "react-hot-toast";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
@@ -87,7 +88,14 @@ function PlanosPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [pp, st] = await Promise.all([fetchPlans(), fetchStatus()]);
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : undefined;
+
+        const [pp, st] = await Promise.all([
+          fetchPlans({ headers }), 
+          fetchStatus({ headers })
+        ]);
         setPlans(pp as PlanRow[]);
         if (st?.plan_id) setCurrentPlanId(st.plan_id);
       } catch (err) {
@@ -105,7 +113,13 @@ function PlanosPage() {
     let cancelled = false;
     const tick = async () => {
       try {
-        const res = await checkStatus({ data: { paymentId: paymentInfo.paymentId } });
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
+        const res = await checkStatus({ 
+          data: { paymentId: paymentInfo.paymentId },
+          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+        });
         if (cancelled) return;
         if (res.status === "paid") {
           setStep("success");
@@ -147,8 +161,12 @@ function PlanosPage() {
     if (!selectedPlan) return;
     setGenerating(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const res = await startCheckout({
         data: { planId: selectedPlan.id as "pro" | "business", billingCycle: billing },
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
       });
       if (!res.success) throw new Error(res.error);
       setPaymentInfo({
@@ -181,7 +199,13 @@ function PlanosPage() {
   const handleSimulatePayment = async () => {
     if (!paymentInfo) return;
     try {
-      const res = await simulatePayment({ data: { paymentId: paymentInfo.paymentId } });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const res = await simulatePayment({ 
+        data: { paymentId: paymentInfo.paymentId },
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
       if (!res.success) throw new Error(res.error);
       toast.success("Pagamento simulado!");
       setStep("waiting");

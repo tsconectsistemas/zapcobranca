@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyPlanStatus } from "@/lib/plans.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface PlanLimits {
   loading: boolean;
@@ -31,7 +32,12 @@ export function usePlanLimits(): PlanLimits {
 
   const refresh = useCallback(async () => {
     try {
-      const data = await fetchStatus();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const data = await fetchStatus({
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
       if (!data) return;
       setState({
         planId: data.plan_id ?? "free",
