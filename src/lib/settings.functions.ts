@@ -61,7 +61,7 @@ export const getSettingsSnapshot = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("tenants")
         .select(
-          "id, company_name, email, whatsapp, logo_url, plan, max_customers, active, notification_settings, notification_config",
+          "id, company_name, email, whatsapp, logo_url, plan, max_customers, active, notification_settings, notification_config, external_webhook_url, external_webhook_enabled, external_webhook_secret",
         )
         .eq("id", tenant.id)
         .maybeSingle(),
