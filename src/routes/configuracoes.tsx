@@ -122,7 +122,7 @@ function ConfiguracoesPage() {
   const [asaasEnvironment, setAsaasEnvironment] = useState<AsaasEnvironment>("sandbox");
   const [asaasApiKey, setAsaasApiKey] = useState("");
   const [asaasWebhookToken, setAsaasWebhookToken] = useState("");
-  const [pixExpirationMinutes, setPixExpirationMinutes] = useState(60);
+  
   const [hasAsaasKey, setHasAsaasKey] = useState(false);
   const [showAsaasKey, setShowAsaasKey] = useState(false);
 
@@ -193,7 +193,7 @@ function ConfiguracoesPage() {
         setAsaasEnvironment(data.asaas.environment);
         setHasAsaasKey(data.asaas.hasApiKey);
         setAsaasWebhookToken(data.asaas.webhookToken);
-        setPixExpirationMinutes(data.asaas.pixExpirationMinutes);
+        
         setEvolutionApiUrl(data.evolution.apiUrl);
         setHasEvolutionKey(data.evolution.hasApiKey);
         setInstanceName(data.evolution.instanceName);
@@ -277,7 +277,7 @@ function ConfiguracoesPage() {
       const args: Record<string, string> = { _asaas_environment: asaasEnvironment };
       if (asaasApiKey.trim()) args._asaas_api_key = asaasApiKey.trim();
       if (asaasWebhookToken.trim()) args._asaas_webhook_token = asaasWebhookToken.trim();
-      args._pix_expiration_minutes = String(pixExpirationMinutes);
+      
       const { error } = await supabase.rpc("update_tenant_secrets", args as never);
       if (error) throw error;
 
@@ -672,20 +672,6 @@ function ConfiguracoesPage() {
                 </p>
               </div>
               
-              <div className="space-y-1.5">
-                <Label htmlFor="pix-expiration">Expiração do PIX (minutos)</Label>
-                <Input
-                  id="pix-expiration"
-                  type="number"
-                  min={5}
-                  max={1440}
-                  value={pixExpirationMinutes}
-                  onChange={(e) => setPixExpirationMinutes(Number(e.target.value))}
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Tempo que o PIX fica válido após ser gerado (padrão: 60 min).
-                </p>
-              </div>
 
               <div className="space-y-1.5">
                 <Label>URL do Webhook</Label>
