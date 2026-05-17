@@ -287,11 +287,11 @@ function ConfiguracoesPage() {
   const handleSaveAsaas = async () => {
     setSavingAsaas(true);
     try {
-      const args: Record<string, string> = { _asaas_environment: asaasEnvironment };
+      const args: any = { _asaas_environment: asaasEnvironment };
       if (asaasApiKey.trim()) args._asaas_api_key = asaasApiKey.trim();
       if (asaasWebhookToken.trim()) args._asaas_webhook_token = asaasWebhookToken.trim();
       
-      const { error } = await supabase.rpc("update_tenant_secrets", args as never);
+      const { error } = await supabase.rpc("update_tenant_secrets", args);
       if (error) throw error;
 
       setHasAsaasKey(Boolean(asaasApiKey.trim()) || hasAsaasKey);
