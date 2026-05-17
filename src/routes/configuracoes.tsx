@@ -165,7 +165,7 @@ function ConfiguracoesPage() {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/asaas-webhook`;
+  const webhookUrl = `${window.location.origin}/api/asaas-webhook`;
 
   useEffect(() => {
     const sync = async () => {
