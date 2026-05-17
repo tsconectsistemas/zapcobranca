@@ -47,6 +47,7 @@ export interface CustomerFormData {
   expiration_date: string | null; // YYYY-MM-DD
   status: string;
   pix_emv_payload: string | null;
+  asaas_customer_id?: string | null;
   notes: string | null;
 }
 
@@ -73,6 +74,7 @@ const schema = z.object({
   expiration_date: z.string().nullable(),
   status: z.enum(["active", "suspended", "cancelled"]),
   pix_emv_payload: z.string().trim().max(2000).optional().or(z.literal("")),
+  asaas_customer_id: z.string().trim().max(100).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
@@ -108,6 +110,7 @@ export function CustomerModal({
       expiration_date: initial?.expiration_date ?? null,
       status: (initial?.status as FormSchema["status"]) ?? "active",
       pix_emv_payload: initial?.pix_emv_payload ?? "",
+      asaas_customer_id: initial?.asaas_customer_id ?? "",
       notes: initial?.notes ?? "",
     }),
     [initial]
@@ -157,6 +160,7 @@ export function CustomerModal({
         expiration_date: data.expiration_date,
         status: data.status,
         pix_emv_payload: data.pix_emv_payload?.trim() || null,
+        asaas_customer_id: data.asaas_customer_id?.trim() || null,
         notes: data.notes?.trim() || null,
       };
 
@@ -355,30 +359,39 @@ export function CustomerModal({
               </Field>
             </Section>
 
-            {/* PIX */}
-            <Section title="PIX" cols={1}>
+            {/* Integração Asaas */}
+            <Section title="Integração Asaas" cols={2}>
               <Field
-                label="Payload PIX EMV"
-                hint="Cole o conteúdo da coluna 'Chave PIX' da sua planilha"
-                error={form.formState.errors.pix_emv_payload?.message}
+                label="ID do Cliente Asaas (cus_...)"
+                hint="Use para vincular cobranças manuais do Sandbox"
+                error={form.formState.errors.asaas_customer_id?.message}
               >
-                <Textarea
-                  {...form.register("pix_emv_payload")}
-                  rows={3}
-                  placeholder="00020126360014BR.GOV.BCB.PIX..."
-                  className="font-mono text-xs"
+                <Input
+                  {...form.register("asaas_customer_id")}
+                  placeholder="cus_000000000000"
                 />
               </Field>
-              <div>
+              <div className="flex flex-col gap-2">
+                <Field
+                  label="Payload PIX EMV"
+                  hint="Opcional se usar ID do Cliente"
+                  error={form.formState.errors.pix_emv_payload?.message}
+                >
+                  <Input
+                    {...form.register("pix_emv_payload")}
+                    placeholder="000201..."
+                  />
+                </Field>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="w-fit"
                   disabled={!pixPayload?.trim()}
                   onClick={() => setShowQr(true)}
                 >
                   <QrCode className="mr-2 h-4 w-4" />
-                  Visualizar QR Code
+                  QR Code
                 </Button>
               </div>
             </Section>

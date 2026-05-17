@@ -60,6 +60,7 @@ interface CustomerListItem {
   plan: string | null;
   password_iptv: string | null;
   pix_emv_payload: string | null;
+  asaas_customer_id: string | null;
   notes: string | null;
 }
 
@@ -258,6 +259,7 @@ function ClientesPage() {
       expiration_date: c.expiration_date,
       status: c.status ?? "active",
       pix_emv_payload: c.pix_emv_payload,
+      asaas_customer_id: c.asaas_customer_id,
       notes: c.notes,
     });
     setModalOpen(true);

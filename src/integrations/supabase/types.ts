@@ -51,6 +51,7 @@ export type Database = {
       }
       customers: {
         Row: {
+          asaas_customer_id: string | null
           created_at: string | null
           expiration_date: string | null
           id: string
@@ -72,6 +73,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          asaas_customer_id?: string | null
           created_at?: string | null
           expiration_date?: string | null
           id?: string
@@ -93,6 +95,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          asaas_customer_id?: string | null
           created_at?: string | null
           expiration_date?: string | null
           id?: string
@@ -676,9 +679,10 @@ export type Database = {
           whatsapp: string
         }[]
       }
-      handle_asaas_webhook:
-        | { Args: { _payload: Json }; Returns: Json }
-        | { Args: { _payload: Json; _tenant_id?: string }; Returns: Json }
+      handle_asaas_webhook: {
+        Args: { _payload: Json; _tenant_id?: string }
+        Returns: Json
+      }
       start_plan_checkout: {
         Args: { _billing_cycle: string; _plan_id: string }
         Returns: {
