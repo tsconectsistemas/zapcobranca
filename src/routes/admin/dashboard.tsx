@@ -74,6 +74,7 @@ function AdminDashboard() {
   const [recentTenants, setRecentTenants] = useState<RecentTenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [setupGuideVisible, setSetupGuideVisible] = useState(true);
 
   const fetchData = async () => {
     setRefreshing(true);
@@ -92,7 +93,6 @@ function AdminDashboard() {
 
       setMetrics(mData as unknown as AdminMetrics);
       
-      // Fetch customer counts for these tenants in a separate query to avoid complex joins
       const tenantIds = (tData || []).map(t => t.id);
       if (tenantIds.length > 0) {
         const { data: counts } = await supabase
@@ -133,7 +133,6 @@ function AdminDashboard() {
 
   if (!metrics) return <div className="p-8 text-red-500">Erro ao carregar métricas.</div>;
 
-  // Prepare chart data
   const planData = Object.entries(metrics.tenants_by_plan || {}).map(([name, value]) => ({
     name: name.toUpperCase(),
     value
@@ -141,7 +140,6 @@ function AdminDashboard() {
 
   const COLORS = ["#94a3b8", "#1D9E75", "#3b82f6"];
 
-  // Mock data for revenue chart (since we don't have historical aggregation in the RPC yet)
   const revenueChartData = [
     { month: "Jan", revenue: metrics.total_payments_last_month * 0.8 },
     { month: "Fev", revenue: metrics.total_payments_last_month * 0.9 },
@@ -150,8 +148,18 @@ function AdminDashboard() {
     { month: "Mai", revenue: metrics.total_payments_this_month },
   ];
 
-  const mrrPrev = metrics.mrr * 0.95; // Mocking prev month MRR for display
+  const mrrPrev = metrics.mrr * 0.95; 
   const mrrGrowth = ((metrics.mrr - mrrPrev) / mrrPrev) * 100;
+
+  const steps = [
+    { label: "Conta admin criada", done: true },
+    { label: "Configurar planos", done: false, to: "/admin/planos" },
+    { label: "Criar primeiro voucher", done: false, to: "/admin/vouchers" },
+    { label: "Personalizar landing page", done: false, to: "/admin/landingpage" },
+    { label: "Configurar Evolution API", done: false, to: "/admin/evolution" },
+    { label: "Convidar primeira revenda", done: false, to: "/admin/tenants" },
+  ];
+  const doneCount = steps.filter(s => s.done).length;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -176,6 +184,59 @@ function AdminDashboard() {
           </Button>
         </div>
       </div>
+
+      {/* SETUP GUIDE (Only for new admins) */}
+      {setupGuideVisible && (
+        <div className="bg-[#1A1D27] rounded-xl border border-[#1D9E75]/30 p-6 shadow-lg shadow-[#1D9E75]/5 animate-in slide-in-from-top duration-700">
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-[#1D9E75]/20 flex items-center justify-center text-[#1D9E75]">
+                <Zap className="h-6 w-6 fill-[#1D9E75]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">🚀 Configure o ZapCobrança</h3>
+                <p className="text-xs text-gray-500">Siga os passos abaixo para deixar a plataforma pronta para as revendas.</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-white" onClick={() => setSetupGuideVisible(false)}>
+              Fechar guia
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {steps.map((step, i) => (
+              <div key={i} className={cn(
+                "p-3 rounded-lg border flex items-center justify-between transition-all",
+                step.done ? "bg-[#1D9E75]/5 border-[#1D9E75]/20" : "bg-black/20 border-white/5 grayscale opacity-60"
+              )}>
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold",
+                    step.done ? "bg-[#1D9E75] text-white" : "bg-gray-800 text-gray-500 border border-white/10"
+                  )}>
+                    {step.done ? <CheckCircle2 className="h-3 w-3" /> : i + 1}
+                  </div>
+                  <span className={cn("text-xs font-medium", step.done ? "text-[#1D9E75]" : "text-gray-400")}>{step.label}</span>
+                </div>
+                {!step.done && step.to && (
+                  <Link to={step.to as any}>
+                    <Button size="icon" variant="ghost" className="h-6 w-6 text-gray-500 hover:text-white">
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex items-center gap-4">
+            <div className="flex-1 h-1.5 bg-black/40 rounded-full overflow-hidden">
+              <div className="h-full bg-[#1D9E75] rounded-full transition-all duration-1000" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
+            </div>
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{doneCount} de {steps.length} etapas concluídas</span>
+          </div>
+        </div>
+      )}
 
       {/* ROW 1: REVENUE METRICS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
