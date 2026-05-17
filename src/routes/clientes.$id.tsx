@@ -26,6 +26,8 @@ import { StatusBadge, type CustomerStatus } from "@/components/StatusBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CustomerModal, type CustomerFormData } from "@/components/CustomerModal";
 import { SendWhatsAppModal } from "@/components/SendWhatsAppModal";
+import { ManualRenewalModal } from "@/components/ManualRenewalModal";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -169,6 +171,7 @@ function ClienteDetalhes() {
   const [showPassword, setShowPassword] = useState(false);
   const [pixAmount, setPixAmount] = useState<string>("");
   const [generatedPix, setGeneratedPix] = useState<string>("");
+  const [renewalOpen, setRenewalOpen] = useState(false);
 
   const fetchAll = async () => {
     if (!tenant) return;
@@ -393,6 +396,10 @@ ${customer.pix_emv_payload ? `Ou copie o código PIX abaixo:\n${customer.pix_emv
 
           {/* Action buttons */}
           <div className="mt-4 flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => setRenewalOpen(true)}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Renovar Manual
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
               <Pencil className="mr-2 h-4 w-4" />
               Editar
@@ -769,6 +776,13 @@ ${customer.pix_emv_payload ? `Ou copie o código PIX abaixo:\n${customer.pix_emv
           defaultWhatsapp={customer.whatsapp ?? ""}
           defaultMessage={defaultMessage}
           onSent={fetchAll}
+        />
+
+        <ManualRenewalModal
+          open={renewalOpen}
+          onOpenChange={setRenewalOpen}
+          customer={customer}
+          onDone={fetchAll}
         />
 
         <ConfirmDialog
