@@ -115,7 +115,11 @@ function PagarPage() {
           const now = new Date(paymentData.server_time).getTime();
           const diffMinutes = (now - updated) / (1000 * 60);
           
-          if (diffMinutes > (paymentData.pix_expiration_minutes || 60)) {
+          // Only enforce expiration for dynamic PIX (URLs) or if explicitly short
+          const isDynamic = paymentData.pix_emv_payload?.includes("http");
+          const expirationLimit = paymentData.pix_expiration_minutes || (isDynamic ? 1440 : 43200); // 24h for dynamic, 30 days for static
+          
+          if (diffMinutes > expirationLimit) {
             setIsExpired(true);
           }
         }
@@ -136,9 +140,13 @@ function PagarPage() {
     if (!value) return info.pix_emv_payload;
     try {
       const key = extractPixKey(info.pix_emv_payload);
-      if (!key || key === info.pix_emv_payload && info.pix_emv_payload.startsWith("000201")) {
+      
+      // Se não conseguimos extrair uma chave válida ou se for um link dinâmico (URL),
+      // não tentamos reconstruir o payload para evitar erros no banco (ex: InfinitePay)
+      if (!key || key.includes("http") || (key === info.pix_emv_payload && info.pix_emv_payload.startsWith("000201"))) {
         return info.pix_emv_payload;
       }
+
       return buildPixPayload(
         key,
         value,

@@ -607,19 +607,20 @@ export type Database = {
           status: string
         }[]
       }
-      get_public_payment_info:
-        | {
-            Args: { _token: string }
-            Returns: {
-              error: true
-            } & "Could not choose the best candidate function between: public.get_public_payment_info(_token => text), public.get_public_payment_info(_token => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"[]
-          }
-        | {
-            Args: { _token: string }
-            Returns: {
-              error: true
-            } & "Could not choose the best candidate function between: public.get_public_payment_info(_token => text), public.get_public_payment_info(_token => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"[]
-          }
+      get_public_payment_info: {
+        Args: { _token: string }
+        Returns: {
+          company_name: string
+          customer_name: string
+          expiration_date: string
+          monthly_value: number
+          payload_updated_at: string
+          pix_emv_payload: string
+          pix_expiration_minutes: number
+          plan: string
+          server_time: string
+        }[]
+      }
       get_tenant_secrets: {
         Args: { _tenant_id: string }
         Returns: {
