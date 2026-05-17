@@ -39,57 +39,19 @@ async function sendWhatsAppConfirmation(
 ) {
   if (!customer.whatsapp) return;
 
-  const { data: secrets } = await supabaseAdmin.rpc("get_tenant_secrets", {
-    _tenant_id: customer.tenant_id,
-  });
-  const cfg = secrets?.[0];
-  if (!cfg?.evolution_api_url || !cfg?.evolution_instance) return;
-
-  const { data: session } = await supabaseAdmin
-    .from("whatsapp_sessions")
-    .select("instance_name, status")
-    .eq("tenant_id", customer.tenant_id)
-    .maybeSingle();
-
-  const instance = session?.instance_name || cfg.evolution_instance;
-  if (session && session.status !== "connected") return;
-
   const digits = customer.whatsapp.replace(/\D/g, "");
   const numberWithCountry = digits.startsWith("55") ? digits : `55${digits}`;
 
-  let success = true;
-  let errorMessage: string | null = null;
-
-  try {
-    const baseUrl = normalizeEvolutionApiUrl(cfg.evolution_api_url || "");
-    const res = await fetch(
-      `${baseUrl}/message/sendText/${encodeURIComponent(instance)}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: cfg.evolution_api_key || "",
-        },
-        body: JSON.stringify({ number: numberWithCountry, text: message }),
-      },
-    );
-    if (!res.ok) {
-      success = false;
-      errorMessage = `Evolution responded ${res.status}`;
-    }
-  } catch (err) {
-    success = false;
-    errorMessage = err instanceof Error ? err.message : String(err);
-  }
-
-  await supabaseAdmin.from("notifications").insert({
+  await supabaseAdmin.from("notification_queue").insert({
     tenant_id: customer.tenant_id,
     customer_id: customer.id,
     type: "confirmed",
     message,
     whatsapp_number: numberWithCountry,
-    success,
-    error_message: errorMessage,
+    status: "pending",
+    attempts: 0,
+    max_attempts: 3,
+    next_attempt_at: new Date().toISOString(),
   });
 }
 
