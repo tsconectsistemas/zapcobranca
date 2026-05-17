@@ -74,7 +74,7 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
         // Find or create Asaas customer
         const custRes = await fetch(`${baseUrl}/customers`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", access_token: asaasKey },
+          headers: { "Content-Type": "application/json", access_token: asaasKey, "User-Agent": "ZapCobranca-App" },
           body: JSON.stringify({
             name: tenant?.company_name || "ZapCobrança",
             email: tenant?.email,
