@@ -13,22 +13,53 @@ serve(async (req) => {
   // Security check
   const authHeader = req.headers.get('Authorization') || ''
   if (authHeader !== `Bearer ${CRON_SECRET}`) {
+    console.error('Unauthorized access attempt')
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const today = new Date()
-  // Usar fuso horário do Brasil (Brasília) para garantir que a data de hoje bata com o banco
-  const todayBR = new Date(today.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
-  todayBR.setHours(0, 0, 0, 0)
-  const toDateStr = (d: Date) => {
-    const year = d.getFullYear()
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
+  // Allow triggering for a specific tenant if provided in body
+  let targetTenantId: string | null = null
+  try {
+    const body = await req.json()
+    targetTenantId = body.tenantId || null
+  } catch (e) {
+    // Ignore error if body is empty
   }
 
-  // Fetch all active tenants with WhatsApp connected
-  const { data: tenants, error: tenantsError } = await supabase
+  console.log('Starting notify-expiring function...', { targetTenantId })
+
+  const today = new Date()
+  // Usar fuso horário do Brasil (Brasília) para garantir que a data de hoje bata com o banco
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false
+  });
+  
+  const parts = formatter.formatToParts(today);
+  const getPart = (type: string) => parts.find(p => p.type === type)?.value;
+  
+  const year = parseInt(getPart('year') || '0');
+  const month = parseInt(getPart('month') || '0') - 1;
+  const day = parseInt(getPart('day') || '0');
+  
+  const todayBR = new Date(year, month, day, 0, 0, 0, 0);
+  console.log('Current Date (BR):', todayBR.toISOString().split('T')[0]);
+
+  const toDateStr = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  // Fetch tenants
+  let query = supabase
     .from('tenants')
     .select(`
       id, company_name, whatsapp,
@@ -41,14 +72,19 @@ serve(async (req) => {
       )
     `)
     .eq('active', true)
+  
+  if (targetTenantId) {
+    query = query.eq('id', targetTenantId)
+  }
+
+  const { data: tenants, error: tenantsError } = await query
 
   if (tenantsError) {
     console.error('Error fetching tenants:', tenantsError)
-    return new Response(
-      JSON.stringify({ error: tenantsError.message }),
-      { status: 500 }
-    )
+    return new Response(JSON.stringify({ error: tenantsError.message }), { status: 500 })
   }
+
+  console.log(`Processing ${tenants?.length || 0} tenants`)
 
   const globalResults = {
     tenants_processed: 0,
@@ -62,16 +98,19 @@ serve(async (req) => {
       ? tenant.whatsapp_sessions[0]
       : tenant.whatsapp_sessions
 
+    console.log(`Tenant ${tenant.id}: Config enabled=${config.enabled}, WhatsApp status=${session?.status}`)
+
     // Skip if notifications disabled
     if (config.enabled === false) {
+      console.log(`Tenant ${tenant.id}: Notifications disabled, skipping`)
       globalResults.tenants_skipped++
       continue
     }
 
     // Skip if WhatsApp not connected
     if (!session?.instance_name || session.status !== 'connected') {
+      console.log(`Tenant ${tenant.id}: WhatsApp not connected, skipping`)
       globalResults.tenants_skipped++
-      // Alert tenant about disconnected WhatsApp if they have a number
       if (tenant.whatsapp) {
         await alertTenantWhatsAppDisconnected(tenant)
       }
@@ -81,14 +120,12 @@ serve(async (req) => {
     const beforeDays: number[] = config.before_expiration || [3, 1, 0]
     const afterDays: number[] = config.after_expiration || [1, 3, 7]
 
-    // Build target dates for before expiration (D-3, D-1, D-0)
     const beforeDates = beforeDays.map(d => {
       const date = new Date(todayBR)
       date.setDate(todayBR.getDate() + d)
       return { days: d, dateStr: toDateStr(date), type: `D-${d}` }
     })
 
-    // Build target dates for after expiration (D+1, D+3, D+7)
     const afterDates = afterDays.map(d => {
       const date = new Date(todayBR)
       date.setDate(todayBR.getDate() - d)
@@ -97,9 +134,10 @@ serve(async (req) => {
 
     const allTargetDates = [...beforeDates, ...afterDates]
     const allDateStrings = allTargetDates.map(t => t.dateStr)
+    console.log(`Tenant ${tenant.id}: Target dates:`, allDateStrings)
 
-    // Fetch customers expiring/expired on target dates
-    const { data: customers } = await supabase
+    // Fetch customers
+    const { data: customers, error: customersError } = await supabase
       .from('customers')
       .select(`
         id, name, username, whatsapp,
@@ -111,11 +149,18 @@ serve(async (req) => {
       .not('whatsapp', 'is', null)
       .neq('status', 'cancelled')
 
+    if (customersError) {
+      console.error(`Tenant ${tenant.id}: Error fetching customers:`, customersError)
+      continue
+    }
+
+    console.log(`Tenant ${tenant.id}: Found ${customers?.length || 0} potential customers to notify`)
+
     for (const customer of customers || []) {
-      const target = allTargetDates.find(
-        t => t.dateStr === customer.expiration_date
-      )
+      const target = allTargetDates.find(t => t.dateStr === customer.expiration_date)
       if (!target) continue
+
+      console.log(`Checking customer ${customer.id} (${customer.name}) for type ${target.type}`)
 
       // Check if already notified today for this type
       const { data: existing } = await supabase
@@ -126,9 +171,27 @@ serve(async (req) => {
         .gte('sent_at', toDateStr(todayBR) + 'T00:00:00Z')
         .maybeSingle()
 
-      if (existing) continue
+      if (existing) {
+        console.log(`Customer ${customer.id} already notified for ${target.type} today, skipping`)
+        continue
+      }
 
-      // Build message from template
+      // Check if already in queue
+      const { data: inQueue } = await supabase
+        .from('notification_queue')
+        .select('id')
+        .eq('customer_id', customer.id)
+        .eq('type', target.type)
+        .eq('status', 'pending')
+        .maybeSingle()
+
+      if (inQueue) {
+        console.log(`Customer ${customer.id} already in queue for ${target.type}, skipping`)
+        continue
+      }
+
+      console.log(`Adding customer ${customer.id} to queue for ${target.type}`)
+
       const message = buildMessage(
         config.templates?.[
           target.type === 'D-0' ? 'd0' :
@@ -140,7 +203,6 @@ serve(async (req) => {
         tenant
       )
 
-      // Add to notification queue
       const { error: queueError } = await supabase
         .from('notification_queue')
         .insert({
@@ -154,7 +216,9 @@ serve(async (req) => {
           next_attempt_at: new Date().toISOString(),
         })
 
-      if (!queueError) {
+      if (queueError) {
+        console.error(`Error adding customer ${customer.id} to queue:`, queueError)
+      } else {
         globalResults.notifications_queued++
       }
     }
@@ -162,13 +226,10 @@ serve(async (req) => {
     globalResults.tenants_processed++
   }
 
-  // Process the queue immediately after building it
+  console.log('Finished building queue. Starting processQueue...', globalResults)
   await processQueue()
 
-  return new Response(
-    JSON.stringify(globalResults),
-    { status: 200 }
-  )
+  return new Response(JSON.stringify(globalResults), { status: 200 })
 })
 
 // ─── PROCESS QUEUE ─────────────────────────────────────────
