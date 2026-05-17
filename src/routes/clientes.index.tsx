@@ -39,6 +39,8 @@ import {
   CustomerModal,
   type CustomerFormData,
 } from "@/components/CustomerModal";
+import { ManualRenewalModal } from "@/components/ManualRenewalModal";
+import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -162,6 +164,7 @@ function ClientesPage() {
     null
   );
   const [deleting, setDeleting] = useState(false);
+  const [renewalCustomer, setRenewalCustomer] = useState<CustomerListItem | null>(null);
 
   const load = async () => {
     if (!tenant) return;
@@ -441,6 +444,7 @@ function ClientesPage() {
                   onWhatsApp={() => sendWhatsApp(c)}
                   onSuspend={() => suspend(c)}
                   onDelete={() => setConfirmDelete(c)}
+                  onRenew={() => setRenewalCustomer(c)}
                 />
               ))}
             </div>
@@ -476,6 +480,7 @@ function ClientesPage() {
                         onWhatsApp={() => sendWhatsApp(c)}
                         onSuspend={() => suspend(c)}
                         onDelete={() => setConfirmDelete(c)}
+                        onRenew={() => setRenewalCustomer(c)}
                       />
                     ))}
                   </tbody>
@@ -519,6 +524,13 @@ function ClientesPage() {
           onSaved={load}
         />
 
+        <ManualRenewalModal
+          open={Boolean(renewalCustomer)}
+          onOpenChange={(o) => !o && setRenewalCustomer(null)}
+          customer={renewalCustomer}
+          onDone={load}
+        />
+
         <ConfirmDialog
           open={Boolean(confirmDelete)}
           onOpenChange={(o) => !o && setConfirmDelete(null)}
@@ -546,6 +558,7 @@ interface RowActions {
   onWhatsApp: () => void;
   onSuspend: () => void;
   onDelete: () => void;
+  onRenew: () => void;
 }
 
 function ExpirationText({
@@ -633,6 +646,11 @@ function ActionMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={onRenew}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Renovar Manual
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onEdit}>
           <Pencil className="mr-2 h-4 w-4" />
           Editar
@@ -706,6 +724,7 @@ function CustomerCard({
             onEdit={onEdit}
             onSuspend={onSuspend}
             onDelete={onDelete}
+            onRenew={onRenew}
           />
         </div>
       </div>
