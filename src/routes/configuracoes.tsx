@@ -186,6 +186,9 @@ function ConfiguracoesPage() {
         setEmail(data.tenant.email);
         setResellerWhatsApp(maskWhatsApp(data.tenant.whatsapp));
         setLogoUrl(data.tenant.logoUrl);
+        setExternalWebhookUrl(data.tenant.externalWebhookUrl || "");
+        setExternalWebhookEnabled(data.tenant.externalWebhookEnabled || false);
+        setExternalWebhookSecret(data.tenant.externalWebhookSecret || "");
         setNotificationSettings(data.tenant.notificationSettings);
         setAsaasEnvironment(data.asaas.environment);
         setHasAsaasKey(data.asaas.hasApiKey);
