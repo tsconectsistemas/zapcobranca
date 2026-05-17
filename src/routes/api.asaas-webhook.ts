@@ -5,7 +5,9 @@ import { extractPixKey } from "@/utils/pix";
 
 /**
  * Public webhook endpoint for Asaas payment notifications.
- * URL: https://<host>/api/asaas-webhook
+ * NOTE: In Lovable preview environment, this route might return 302 redirects.
+ * Use the Supabase Edge Function instead for reliable external webhook delivery.
+ * Edge Function URL: https://dxxbqeqdwagmtynfsmzw.supabase.co/functions/v1/asaas-webhook
  */
 
 const PAYMENT_CONFIRMED_EVENTS = new Set([
