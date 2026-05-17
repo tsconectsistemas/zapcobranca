@@ -108,6 +108,7 @@ function ConfiguracoesPage() {
   const saveNotifConfig = useServerFn(saveNotificationConfig);
   const saveEvolution = useServerFn(saveEvolutionConfig);
   const deleteAccount = useServerFn(deleteMyAccount);
+  const testAsaas = useServerFn(testAsaasConnection);
 
   const [loading, setLoading] = useState(true);
   const [companyName, setCompanyName] = useState(tenant?.company_name ?? "");
