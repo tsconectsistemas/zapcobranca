@@ -39,6 +39,7 @@ import {
 import { maskWhatsApp, unmaskDigits } from "@/lib/masks";
 import { cn } from "@/lib/utils";
 import { saveEvolutionConfig } from "@/lib/evolution.functions";
+import { testAsaasConnection } from "@/lib/asaas.functions";
 import {
   AlertCircle,
   AlertTriangle,
