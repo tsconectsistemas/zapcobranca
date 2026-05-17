@@ -115,6 +115,9 @@ function ConfiguracoesPage() {
   const [email, setEmail] = useState(tenant?.email ?? "");
   const [resellerWhatsApp, setResellerWhatsApp] = useState(maskWhatsApp(tenant?.whatsapp ?? ""));
   const [logoUrl, setLogoUrl] = useState(tenant?.logo_url ?? "");
+  const [externalWebhookUrl, setExternalWebhookUrl] = useState("");
+  const [externalWebhookEnabled, setExternalWebhookEnabled] = useState(false);
+  const [externalWebhookSecret, setExternalWebhookSecret] = useState("");
 
   const [asaasEnvironment, setAsaasEnvironment] = useState<AsaasEnvironment>("sandbox");
   const [asaasApiKey, setAsaasApiKey] = useState("");
