@@ -106,6 +106,9 @@ export const getSettingsSnapshot = createServerFn({ method: "GET" })
         plan: fullTenant?.plan ?? "free",
         maxCustomers: fullTenant?.max_customers ?? 50,
         active: fullTenant?.active ?? true,
+        externalWebhookUrl: fullTenant?.external_webhook_url ?? "",
+        externalWebhookEnabled: fullTenant?.external_webhook_enabled ?? false,
+        externalWebhookSecret: fullTenant?.external_webhook_secret ?? "",
         notificationSettings: {
           d3: settings.d3 ?? true,
           d1: settings.d1 ?? true,
