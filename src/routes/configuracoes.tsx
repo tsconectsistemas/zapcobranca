@@ -39,6 +39,7 @@ import {
 import { maskWhatsApp, unmaskDigits } from "@/lib/masks";
 import { cn } from "@/lib/utils";
 import { saveEvolutionConfig } from "@/lib/evolution.functions";
+import { testAsaasConnection } from "@/lib/asaas.functions";
 import {
   AlertCircle,
   AlertTriangle,
@@ -107,6 +108,7 @@ function ConfiguracoesPage() {
   const saveNotifConfig = useServerFn(saveNotificationConfig);
   const saveEvolution = useServerFn(saveEvolutionConfig);
   const deleteAccount = useServerFn(deleteMyAccount);
+  const testAsaas = useServerFn(testAsaasConnection);
 
   const [loading, setLoading] = useState(true);
   const [companyName, setCompanyName] = useState(tenant?.company_name ?? "");
@@ -151,6 +153,7 @@ function ConfiguracoesPage() {
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingAsaas, setSavingAsaas] = useState(false);
+  const [testingAsaas, setTestingAsaas] = useState(false);
   const [savingWhatsApp, setSavingWhatsApp] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -271,6 +274,29 @@ function ConfiguracoesPage() {
       toast.error("Erro ao salvar configurações Asaas");
     } finally {
       setSavingAsaas(false);
+    }
+  };
+
+  const handleTestAsaas = async () => {
+    setTestingAsaas(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const result = await testAsaas({
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
+
+      if (result.success) {
+        toast.success(`Conexão bem-sucedida! Saldo: R$ ${result.balance}`);
+      } else {
+        toast.error(result.error || "Falha na conexão com Asaas");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao testar conexão Asaas");
+    } finally {
+      setTestingAsaas(false);
     }
   };
 
@@ -587,9 +613,23 @@ function ConfiguracoesPage() {
                 </div>
               </div>
 
-              <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
-                <span className={cn("font-medium", hasAsaasKey ? "text-success" : "text-warning")}>● </span>
-                {hasAsaasKey ? "API configurada" : "API não configurada"}
+              <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                <div>
+                  <span className={cn("font-medium", hasAsaasKey ? "text-success" : "text-warning")}>● </span>
+                  {hasAsaasKey ? "API configurada" : "API não configurada"}
+                </div>
+                {hasAsaasKey && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 text-xs" 
+                    onClick={handleTestAsaas}
+                    disabled={testingAsaas}
+                  >
+                    {testingAsaas ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Play className="mr-1 h-3 w-3" />}
+                    Testar conexão
+                  </Button>
+                )}
               </div>
 
               <Accordion type="single" collapsible className="rounded-md border px-4">
@@ -597,12 +637,18 @@ function ConfiguracoesPage() {
                   <AccordionTrigger>Como configurar?</AccordionTrigger>
                   <AccordionContent>
                     <ol className="list-decimal space-y-2 pl-4 text-sm text-muted-foreground">
-                      <li>Acesse sua conta em asaas.com</li>
-                      <li>Vá em Configurações → Integrações → API</li>
-                      <li>Copie sua chave de API e cole acima</li>
-                      <li>Em Configurações → Notificações → Webhooks, adicione a URL do webhook acima</li>
-                      <li>Selecione os eventos: PAYMENT_CONFIRMED, PAYMENT_RECEIVED</li>
-                      <li>Salve e teste com um pagamento real</li>
+                      <li>
+                        Acesse sua conta:
+                        <ul className="mt-1 list-disc pl-4">
+                          <li>Para testes: <a href="https://sandbox.asaas.com" target="_blank" rel="noreferrer" className="text-primary hover:underline">sandbox.asaas.com</a></li>
+                          <li>Produção: <a href="https://asaas.com" target="_blank" rel="noreferrer" className="text-primary hover:underline">asaas.com</a></li>
+                        </ul>
+                      </li>
+                      <li>Vá em <strong>Configurações → Integrações → API</strong></li>
+                      <li>Gere e copie sua chave de API e cole acima</li>
+                      <li>Em <strong>Configurações → Notificações → Webhooks</strong>, adicione a URL do webhook acima</li>
+                      <li>Selecione os eventos: <code>PAYMENT_CONFIRMED</code>, <code>PAYMENT_RECEIVED</code></li>
+                      <li>Salve as configurações aqui no ZapCobrança e use o botão "Testar conexão"</li>
                     </ol>
                   </AccordionContent>
                 </AccordionItem>
