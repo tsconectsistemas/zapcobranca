@@ -13,10 +13,21 @@ import {
   ChevronRight,
   TrendingUp,
   CreditCard,
-  Users
+  Users,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -47,6 +58,44 @@ function AdminPlanos() {
   const [plans, setPlans] = useState<SaaSPlan[]>([]);
   const [stats, setStats] = useState<Record<string, PlanStats>>({});
   const [loading, setLoading] = useState(true);
+  const [editingPlan, setEditingPlan] = useState<SaaSPlan | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const openEditModal = (plan: SaaSPlan) => {
+    setEditingPlan({ ...plan });
+    setIsModalOpen(true);
+  };
+
+  const handleSavePlan = async () => {
+    if (!editingPlan) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("saas_plans")
+        .update({
+          name: editingPlan.name,
+          description: editingPlan.description,
+          price_monthly: editingPlan.price_monthly,
+          price_yearly: editingPlan.price_yearly,
+          max_customers: editingPlan.max_customers,
+          is_active: editingPlan.is_active,
+          is_featured: editingPlan.is_featured,
+          features: editingPlan.features,
+        })
+        .eq("id", editingPlan.id);
+
+      if (error) throw error;
+      toast.success("Plano atualizado com sucesso!");
+      setIsModalOpen(false);
+      fetchData();
+    } catch (err) {
+      console.error("Error updating plan:", err);
+      toast.error("Erro ao salvar alterações");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -118,9 +167,97 @@ function AdminPlanos() {
             plan={plan} 
             stats={stats[plan.id]} 
             onRefresh={fetchData}
+            onEdit={() => openEditModal(plan)}
           />
         ))}
       </div>
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="bg-[#1A1D27] border-white/5 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Plano: {editingPlan?.name}</DialogTitle>
+          </DialogHeader>
+          
+          {editingPlan && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Nome do Plano</Label>
+                <Input 
+                  value={editingPlan.name} 
+                  onChange={(e) => setEditingPlan({...editingPlan, name: e.target.value})}
+                  className="bg-[#0F1117] border-white/10"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Preço Mensal (R$)</Label>
+                  <Input 
+                    type="number"
+                    value={editingPlan.price_monthly} 
+                    onChange={(e) => setEditingPlan({...editingPlan, price_monthly: Number(e.target.value)})}
+                    className="bg-[#0F1117] border-white/10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Preço Anual (R$)</Label>
+                  <Input 
+                    type="number"
+                    value={editingPlan.price_yearly || 0} 
+                    onChange={(e) => setEditingPlan({...editingPlan, price_yearly: Number(e.target.value)})}
+                    className="bg-[#0F1117] border-white/10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Limite de Clientes (0 para ilimitado)</Label>
+                <Input 
+                  type="number"
+                  value={editingPlan.max_customers || 0} 
+                  onChange={(e) => setEditingPlan({...editingPlan, max_customers: Number(e.target.value) || null})}
+                  className="bg-[#0F1117] border-white/10"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5">
+                <div className="space-y-0.5">
+                  <Label>Plano em Destaque</Label>
+                  <p className="text-[10px] text-gray-500">Exibido com borda verde na Landing Page</p>
+                </div>
+                <Switch 
+                  checked={editingPlan.is_featured} 
+                  onCheckedChange={(val) => setEditingPlan({...editingPlan, is_featured: val})}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5">
+                <div className="space-y-0.5">
+                  <Label>Plano Ativo</Label>
+                  <p className="text-[10px] text-gray-500">Permite novas assinaturas</p>
+                </div>
+                <Switch 
+                  checked={editingPlan.is_active} 
+                  onCheckedChange={(val) => setEditingPlan({...editingPlan, is_active: val})}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="text-gray-400">
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-[#1D9E75] hover:bg-[#1D9E75]/90" 
+              onClick={handleSavePlan}
+              disabled={saving}
+            >
+              {saving ? "Salvando..." : "Salvar Alterações"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Migration Tool Placeholder */}
       <div className="bg-[#1A1D27] rounded-xl border border-white/5 p-6 border-l-4 border-l-[#1D9E75]">
@@ -160,7 +297,7 @@ function AdminPlanos() {
   );
 }
 
-function PlanCard({ plan, stats, onRefresh }: { plan: SaaSPlan, stats: PlanStats, onRefresh: () => void }) {
+function PlanCard({ plan, stats, onRefresh, onEdit }: { plan: SaaSPlan, stats: PlanStats, onRefresh: () => void, onEdit: () => void }) {
   const toggleActive = async () => {
     const { error } = await supabase
       .from("saas_plans")
@@ -240,7 +377,12 @@ function PlanCard({ plan, stats, onRefresh }: { plan: SaaSPlan, stats: PlanStats
       </div>
 
       <div className="bg-black/20 p-4 border-t border-white/5 flex gap-2">
-        <Button variant="outline" size="sm" className="flex-1 bg-transparent border-white/10 hover:bg-white/5 text-xs">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex-1 bg-transparent border-white/10 hover:bg-white/5 text-xs"
+          onClick={onEdit}
+        >
           <Settings className="mr-2 h-3.5 w-3.5" />
           Editar
         </Button>
