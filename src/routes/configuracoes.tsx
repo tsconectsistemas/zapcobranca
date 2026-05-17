@@ -232,12 +232,16 @@ function ConfiguracoesPage() {
 
     setSavingProfile(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const result = await saveProfile({
         data: {
           companyName: companyName.trim(),
           whatsapp: unmaskDigits(resellerWhatsApp),
           logoUrl: logoUrl.trim(),
         },
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
       });
 
       if (!result.success) throw new Error(result.error);
@@ -299,7 +303,9 @@ function ConfiguracoesPage() {
       toast.success("Configurações WhatsApp salvas!");
       
       // Se salvou com sucesso, tenta atualizar o status para refletir a nova configuração
-      await loadSettings();
+      await loadSettings({
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
     } catch (error) {
       console.error("[Config] Save Error:", error);
       toast.error(error instanceof Error ? error.message : "Erro ao salvar WhatsApp");
@@ -311,7 +317,13 @@ function ConfiguracoesPage() {
   const handleSaveNotifications = async () => {
     setSavingNotifications(true);
     try {
-      const result = await saveNotifications({ data: notificationSettings });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const result = await saveNotifications({ 
+        data: notificationSettings,
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
       if (!result.success) throw new Error(result.error);
 
       await refreshTenant();
@@ -326,7 +338,13 @@ function ConfiguracoesPage() {
   const handleSaveNotifConfig = async () => {
     setSavingNotifications(true);
     try {
-      const result = await saveNotifConfig({ data: notifConfig });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const result = await saveNotifConfig({ 
+        data: notifConfig,
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
       if (!result.success) throw new Error(result.error);
 
       await refreshTenant();
@@ -411,7 +429,13 @@ function ConfiguracoesPage() {
   const handleDeleteAccount = async () => {
     setDeletingAccount(true);
     try {
-      const result = await deleteAccount({ data: { confirmationText: deleteConfirmation } });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const result = await deleteAccount({ 
+        data: { confirmationText: deleteConfirmation },
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
       if (!result.success) throw new Error(result.error);
 
       toast.success("Conta encerrada com sucesso");
