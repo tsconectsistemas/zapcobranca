@@ -74,7 +74,7 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
         // Find or create Asaas customer
         const custRes = await fetch(`${baseUrl}/customers`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", access_token: asaasKey },
+          headers: { "Content-Type": "application/json", access_token: asaasKey, "User-Agent": "ZapCobranca-App" },
           body: JSON.stringify({
             name: tenant?.company_name || "ZapCobrança",
             email: tenant?.email,
@@ -89,7 +89,7 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
           due.setDate(due.getDate() + 1);
           const payRes = await fetch(`${baseUrl}/payments`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", access_token: asaasKey },
+            headers: { "Content-Type": "application/json", access_token: asaasKey, "User-Agent": "ZapCobranca-App" },
             body: JSON.stringify({
               customer: cust.id,
               billingType: "PIX",
@@ -103,7 +103,7 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
           if (pay?.id) {
             asaasPaymentId = pay.id;
             const qrRes = await fetch(`${baseUrl}/payments/${pay.id}/pixQrCode`, {
-              headers: { access_token: asaasKey },
+              headers: { access_token: asaasKey, "User-Agent": "ZapCobranca-App" },
             });
             const qr = (await qrRes.json()) as { payload?: string; encodedImage?: string };
             pixEmv = qr.payload ?? null;
