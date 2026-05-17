@@ -13,9 +13,6 @@ const profileSchema = z.object({
   companyName: z.string().trim().min(2).max(120),
   whatsapp: z.string().trim().max(20),
   logoUrl: logoUrlSchema,
-  externalWebhookUrl: z.string().trim().url().optional().or(z.literal("")),
-  externalWebhookEnabled: z.boolean().optional(),
-  externalWebhookSecret: z.string().trim().max(100).optional().or(z.literal("")),
 });
 
 const notificationSettingsSchema = z.object({
@@ -61,7 +58,7 @@ export const getSettingsSnapshot = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("tenants")
         .select(
-          "id, company_name, email, whatsapp, logo_url, plan, max_customers, active, notification_settings, notification_config, external_webhook_url, external_webhook_enabled, external_webhook_secret",
+          "id, company_name, email, whatsapp, logo_url, plan, max_customers, active, notification_settings, notification_config",
         )
         .eq("id", tenant.id)
         .maybeSingle(),
@@ -106,9 +103,6 @@ export const getSettingsSnapshot = createServerFn({ method: "GET" })
         plan: fullTenant?.plan ?? "free",
         maxCustomers: fullTenant?.max_customers ?? 50,
         active: fullTenant?.active ?? true,
-        externalWebhookUrl: fullTenant?.external_webhook_url ?? "",
-        externalWebhookEnabled: fullTenant?.external_webhook_enabled ?? false,
-        externalWebhookSecret: fullTenant?.external_webhook_secret ?? "",
         notificationSettings: {
           d3: settings.d3 ?? true,
           d1: settings.d1 ?? true,
@@ -149,9 +143,6 @@ export const saveTenantProfile = createServerFn({ method: "POST" })
         company_name: data.companyName,
         whatsapp: data.whatsapp || null,
         logo_url: data.logoUrl || null,
-        external_webhook_url: data.externalWebhookUrl || null,
-        external_webhook_enabled: data.externalWebhookEnabled ?? false,
-        external_webhook_secret: data.externalWebhookSecret || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", tenant.id);

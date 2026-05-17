@@ -49,31 +49,6 @@ async function sendWhatsAppConfirmation(
   });
 }
 
-async function forwardWebhook(
-  url: string,
-  payload: any,
-  secret?: string | null,
-) {
-  try {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      "User-Agent": "ZapCobranca-Webhook-Forwarder",
-    };
-    if (secret) {
-      headers["X-Webhook-Secret"] = secret;
-    }
-
-    await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
-    console.log(`[asaas-webhook] Forwarded to ${url}`);
-  } catch (err) {
-    console.error(`[asaas-webhook] Forwarding failed to ${url}:`, err);
-  }
-}
-
 export const Route = createFileRoute("/api/asaas-webhook")({
   server: {
     handlers: {
@@ -231,21 +206,6 @@ export const Route = createFileRoute("/api/asaas-webhook")({
 
           await sendWhatsAppConfirmation(matched, newExpirationDate, message);
 
-          // 5. Forward to external webhook if enabled
-          if (cfg?.external_webhook_enabled && cfg?.external_webhook_url) {
-            const forwardPayload = {
-              event: "payment.confirmed",
-              paymentId: payment?.id,
-              customerId: matched.id,
-              username: matched.username,
-              name: matched.name,
-              amount: payment?.value || matched.monthly_value,
-              paidAt: new Date().toISOString(),
-              newExpiration: newExpirationDate,
-              raw: payload
-            };
-            await forwardWebhook(cfg.external_webhook_url, forwardPayload, cfg.external_webhook_secret);
-          }
 
           return json(
             {

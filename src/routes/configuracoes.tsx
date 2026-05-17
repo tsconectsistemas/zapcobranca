@@ -115,9 +115,6 @@ function ConfiguracoesPage() {
   const [email, setEmail] = useState(tenant?.email ?? "");
   const [resellerWhatsApp, setResellerWhatsApp] = useState(maskWhatsApp(tenant?.whatsapp ?? ""));
   const [logoUrl, setLogoUrl] = useState(tenant?.logo_url ?? "");
-  const [externalWebhookUrl, setExternalWebhookUrl] = useState("");
-  const [externalWebhookEnabled, setExternalWebhookEnabled] = useState(false);
-  const [externalWebhookSecret, setExternalWebhookSecret] = useState("");
 
   const [asaasEnvironment, setAsaasEnvironment] = useState<AsaasEnvironment>("sandbox");
   const [asaasApiKey, setAsaasApiKey] = useState("");
@@ -186,9 +183,6 @@ function ConfiguracoesPage() {
         setEmail(data.tenant.email);
         setResellerWhatsApp(maskWhatsApp(data.tenant.whatsapp));
         setLogoUrl(data.tenant.logoUrl);
-        setExternalWebhookUrl(data.tenant.externalWebhookUrl || "");
-        setExternalWebhookEnabled(data.tenant.externalWebhookEnabled || false);
-        setExternalWebhookSecret(data.tenant.externalWebhookSecret || "");
         setNotificationSettings(data.tenant.notificationSettings);
         setAsaasEnvironment(data.asaas.environment);
         setHasAsaasKey(data.asaas.hasApiKey);
@@ -253,9 +247,6 @@ function ConfiguracoesPage() {
           companyName: companyName.trim(),
           whatsapp: unmaskDigits(resellerWhatsApp),
           logoUrl: logoUrl.trim(),
-          externalWebhookUrl: externalWebhookUrl.trim(),
-          externalWebhookEnabled: externalWebhookEnabled,
-          externalWebhookSecret: externalWebhookSecret.trim(),
         },
         headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
       });
@@ -557,44 +548,6 @@ function ConfiguracoesPage() {
 
               <Separator className="my-2" />
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="webhook-enabled">Webhook Externo (IPTV)</Label>
-                    <p className="text-[11px] text-muted-foreground">Notificar seu servidor IPTV ao receber pagamentos.</p>
-                  </div>
-                  <Switch
-                    id="webhook-enabled"
-                    checked={externalWebhookEnabled}
-                    onCheckedChange={setExternalWebhookEnabled}
-                  />
-                </div>
-
-                {externalWebhookEnabled && (
-                  <>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="external-webhook-url">URL do Webhook IPTV</Label>
-                      <Input
-                        id="external-webhook-url"
-                        value={externalWebhookUrl}
-                        onChange={(e) => setExternalWebhookUrl(e.target.value)}
-                        placeholder="https://seu-servidor-iptv.com/webhook"
-                        disabled={loading}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="external-webhook-secret">Secret / Token (opcional)</Label>
-                      <Input
-                        id="external-webhook-secret"
-                        value={externalWebhookSecret}
-                        onChange={(e) => setExternalWebhookSecret(e.target.value)}
-                        placeholder="Token de segurança"
-                        disabled={loading}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
 
               <div className="flex justify-end">
                 <Button onClick={handleSaveProfile} disabled={savingProfile || loading}>
