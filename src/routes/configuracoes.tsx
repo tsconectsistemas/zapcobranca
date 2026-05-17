@@ -253,6 +253,9 @@ function ConfiguracoesPage() {
           companyName: companyName.trim(),
           whatsapp: unmaskDigits(resellerWhatsApp),
           logoUrl: logoUrl.trim(),
+          externalWebhookUrl: externalWebhookUrl.trim(),
+          externalWebhookEnabled: externalWebhookEnabled,
+          externalWebhookSecret: externalWebhookSecret.trim(),
         },
         headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
       });
