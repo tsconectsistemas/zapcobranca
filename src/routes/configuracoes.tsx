@@ -119,6 +119,7 @@ function ConfiguracoesPage() {
   const [asaasEnvironment, setAsaasEnvironment] = useState<AsaasEnvironment>("sandbox");
   const [asaasApiKey, setAsaasApiKey] = useState("");
   const [asaasWebhookToken, setAsaasWebhookToken] = useState("");
+  const [pixExpirationMinutes, setPixExpirationMinutes] = useState(60);
   const [hasAsaasKey, setHasAsaasKey] = useState(false);
   const [showAsaasKey, setShowAsaasKey] = useState(false);
 
