@@ -89,7 +89,7 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
           due.setDate(due.getDate() + 1);
           const payRes = await fetch(`${baseUrl}/payments`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", access_token: asaasKey },
+            headers: { "Content-Type": "application/json", access_token: asaasKey, "User-Agent": "ZapCobranca-App" },
             body: JSON.stringify({
               customer: cust.id,
               billingType: "PIX",
