@@ -28,7 +28,7 @@ export const triggerNotificationsNow = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
           Authorization: `Bearer ${cronSecret}`,
         },
-        body: "{}",
+        body: JSON.stringify({ tenantId: tenant.id }),
       });
       
       const data = await res.json().catch(() => ({}));
