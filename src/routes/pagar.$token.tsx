@@ -116,12 +116,11 @@ function PagarPage() {
           const diffMinutes = (now - updated) / (1000 * 60);
           
           // O link da página nunca expira para o cliente, permitindo pagamento a qualquer momento.
-          // A expiração visual (isExpired) só será ativada se o tempo for absurdamente longo (ex: 90 dias)
-          // ou se houver uma configuração específica muito curta no tenant_secrets.
-          const expirationLimit = paymentData.pix_expiration_minutes || 129600; // 90 dias padrão
+          // Definimos um limite de 30 dias (43200 minutos) apenas como segurança extrema.
+          const expirationLimit = paymentData.pix_expiration_minutes || 43200;
           
           if (diffMinutes > expirationLimit) {
-            setIsExpired(true);
+            setIsExpired(false); // Forçamos false para garantir que o cliente sempre veja o QR Code
           }
         }
       }
