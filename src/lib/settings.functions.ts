@@ -115,6 +115,7 @@ export const getSettingsSnapshot = createServerFn({ method: "GET" })
       asaas: {
         environment: secretRow?.asaas_environment === "production" ? "production" : "sandbox",
         hasApiKey: Boolean(secretRow?.asaas_api_key),
+        webhookToken: secretRow?.asaas_webhook_token ?? "",
       },
       evolution: {
         apiUrl: normalizeEvolutionApiUrl(secretRow?.evolution_api_url ?? ""),
