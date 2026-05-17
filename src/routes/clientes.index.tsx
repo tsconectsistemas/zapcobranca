@@ -632,11 +632,13 @@ function ActionMenu({
   onEdit,
   onSuspend,
   onDelete,
+  onRenew,
 }: {
   customer: CustomerListItem;
   onEdit: () => void;
   onSuspend: () => void;
   onDelete: () => void;
+  onRenew: () => void;
 }) {
   return (
     <DropdownMenu>
@@ -678,6 +680,7 @@ function CustomerCard({
   onWhatsApp,
   onSuspend,
   onDelete,
+  onRenew,
 }: { customer: CustomerListItem } & RowActions) {
   const tone = expirationTone(customer.expiration_date, customer.status);
   return (
@@ -739,6 +742,7 @@ function CustomerRow({
   onWhatsApp,
   onSuspend,
   onDelete,
+  onRenew,
 }: { customer: CustomerListItem } & RowActions) {
   const tone = expirationTone(customer.expiration_date, customer.status);
   return (
