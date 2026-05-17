@@ -58,7 +58,7 @@ function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-[#0F1117] flex flex-col items-center justify-center p-4">
       <div className="mb-8 flex flex-col items-center">
-        <Logo className="h-10 text-[#1D9E75]" />
+        <Logo size="lg" />
         <div className="mt-2 flex items-center gap-2 text-gray-400">
           <Settings className="h-4 w-4" />
           <span className="text-sm font-medium uppercase tracking-wider">Painel Administrativo</span>
