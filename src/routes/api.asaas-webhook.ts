@@ -59,16 +59,6 @@ export const Route = createFileRoute("/api/asaas-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expectedToken = process.env.ASAAS_WEBHOOK_TOKEN;
-        if (expectedToken) {
-          const provided =
-            request.headers.get("asaas-access-token") ||
-            request.headers.get("Asaas-Access-Token");
-          if (provided !== expectedToken) {
-            return json({ error: "unauthorized" }, 401);
-          }
-        }
-
         let payload: any;
         try {
           payload = await request.json();
@@ -79,6 +69,41 @@ export const Route = createFileRoute("/api/asaas-webhook")({
         const event = payload?.event as string | undefined;
         const payment = payload?.payment;
 
+        // Matches customer by PIX key to find the tenant first, then validates token
+        const pixKey: string =
+          payment?.pixTransaction?.pixKey ||
+          payment?.pixTransaction?.endToEndIdentifier ||
+          "";
+
+        if (!pixKey && event !== "TEST") {
+          return json({ matched: false, reason: "no_pix_key" }, 200);
+        }
+
+        const { data: matchedCustomer } = await supabaseAdmin
+          .from("customers")
+          .select("id, tenant_id, pix_emv_payload")
+          .not("pix_emv_payload", "is", null)
+          .limit(10000)
+          .then(res => ({
+            data: res.data?.find(c => c.pix_emv_payload?.includes(pixKey))
+          }));
+
+        if (matchedCustomer) {
+          const { data: secrets } = await supabaseAdmin.rpc("get_tenant_secrets", {
+            _tenant_id: matchedCustomer.tenant_id
+          });
+          const expectedToken = secrets?.[0]?.asaas_webhook_token;
+          
+          if (expectedToken) {
+            const provided =
+              request.headers.get("asaas-access-token") ||
+              request.headers.get("Asaas-Access-Token");
+            if (provided !== expectedToken) {
+              return json({ error: "unauthorized_token" }, 401);
+            }
+          }
+        }
+
         // Log using RPC to ensure it's recorded even if matching fails
         await supabaseAdmin.rpc("handle_asaas_webhook", { _payload: payload });
 
@@ -87,11 +112,6 @@ export const Route = createFileRoute("/api/asaas-webhook")({
         }
 
         try {
-          const pixKey: string =
-            payment?.pixTransaction?.pixKey ||
-            payment?.pixTransaction?.endToEndIdentifier ||
-            "";
-
           if (!pixKey) {
             return json({ matched: false, reason: "no_pix_key" }, 200);
           }

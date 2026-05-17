@@ -118,6 +118,7 @@ function ConfiguracoesPage() {
 
   const [asaasEnvironment, setAsaasEnvironment] = useState<AsaasEnvironment>("sandbox");
   const [asaasApiKey, setAsaasApiKey] = useState("");
+  const [asaasWebhookToken, setAsaasWebhookToken] = useState("");
   const [hasAsaasKey, setHasAsaasKey] = useState(false);
   const [showAsaasKey, setShowAsaasKey] = useState(false);
 
@@ -184,6 +185,7 @@ function ConfiguracoesPage() {
         setNotificationSettings(data.tenant.notificationSettings);
         setAsaasEnvironment(data.asaas.environment);
         setHasAsaasKey(data.asaas.hasApiKey);
+        setAsaasWebhookToken(data.asaas.webhookToken);
         setEvolutionApiUrl(data.evolution.apiUrl);
         setHasEvolutionKey(data.evolution.hasApiKey);
         setInstanceName(data.evolution.instanceName);
@@ -263,6 +265,7 @@ function ConfiguracoesPage() {
     try {
       const args: Record<string, string> = { _asaas_environment: asaasEnvironment };
       if (asaasApiKey.trim()) args._asaas_api_key = asaasApiKey.trim();
+      if (asaasWebhookToken.trim()) args._asaas_webhook_token = asaasWebhookToken.trim();
       const { error } = await supabase.rpc("update_tenant_secrets", args as never);
       if (error) throw error;
 
@@ -601,6 +604,19 @@ function ConfiguracoesPage() {
                     {showAsaasKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="asaas-token">Token do Webhook Asaas (opcional)</Label>
+                <Input
+                  id="asaas-token"
+                  placeholder="Seu token de segurança"
+                  value={asaasWebhookToken}
+                  onChange={(e) => setAsaasWebhookToken(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Garante que apenas o Asaas possa enviar notificações para seu app.
+                </p>
               </div>
 
               <div className="space-y-1.5">
