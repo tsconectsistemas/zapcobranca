@@ -104,9 +104,6 @@ export const Route = createFileRoute("/api/asaas-webhook")({
           }
         }
 
-        const event = payload?.event as string | undefined;
-        const payment = payload?.payment;
-
         // Log using RPC to ensure it's recorded even if matching fails
         await supabaseAdmin.rpc("handle_asaas_webhook", { _payload: payload });
 
@@ -115,11 +112,6 @@ export const Route = createFileRoute("/api/asaas-webhook")({
         }
 
         try {
-          const pixKey: string =
-            payment?.pixTransaction?.pixKey ||
-            payment?.pixTransaction?.endToEndIdentifier ||
-            "";
-
           if (!pixKey) {
             return json({ matched: false, reason: "no_pix_key" }, 200);
           }
