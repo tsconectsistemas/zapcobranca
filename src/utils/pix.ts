@@ -100,8 +100,51 @@ export function inserirValorNoPix_TLV(pix: string, valor: number): string {
 }
 
 /**
- * Extrai a chave PIX (Legado/Fallback)
+ * Constrói um payload PIX completo (Fallback/Novo).
  */
+export function buildPixPayload(
+  pixKey: string,
+  valor: number,
+  nome: string,
+  cidade: string,
+  txId: string = "***"
+): string {
+  const field = (id: string, val: string) =>
+    id + val.length.toString().padStart(2, "0") + val;
+
+  const gui = field("00", "BR.GOV.BCB.PIX");
+  const key = field("01", pixKey);
+  const merchant = field("26", gui + key);
+  const valorStr = valor.toFixed(2);
+  const nomeLim = nome
+    .substring(0, 25)
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const cidadeLim = cidade
+    .substring(0, 15)
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const txIdLim = txId.replace(/\s/g, "").substring(0, 25);
+  const addData = field("62", field("05", txIdLim));
+
+  const payload =
+    "000201" +
+    "010211" +
+    merchant +
+    "52040000" +
+    "5303986" +
+    field("54", valorStr) +
+    "5802BR" +
+    field("59", nomeLim) +
+    field("60", cidadeLim) +
+    addData +
+    "6304";
+
+  return payload + calcularCRC16(payload);
+}
+
 export function extractPixKey(emvPayload: string): string {
   if (!emvPayload) return "";
   if (!emvPayload.startsWith("000201")) return emvPayload;
