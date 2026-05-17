@@ -277,6 +277,29 @@ function ConfiguracoesPage() {
     }
   };
 
+  const handleTestAsaas = async () => {
+    setTestingAsaas(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const result = await testAsaas({
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
+
+      if (result.success) {
+        toast.success(`Conexão bem-sucedida! Saldo: R$ ${result.balance}`);
+      } else {
+        toast.error(result.error || "Falha na conexão com Asaas");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao testar conexão Asaas");
+    } finally {
+      setTestingAsaas(false);
+    }
+  };
+
   const handleSaveWhatsApp = async () => {
     if (!evolutionApiUrl.trim() || (!evolutionApiKey.trim() && !hasEvolutionKey)) {
       toast.error("Preencha a URL e a API Key da Evolution");
