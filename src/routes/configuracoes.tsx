@@ -268,6 +268,7 @@ function ConfiguracoesPage() {
       const args: Record<string, string> = { _asaas_environment: asaasEnvironment };
       if (asaasApiKey.trim()) args._asaas_api_key = asaasApiKey.trim();
       if (asaasWebhookToken.trim()) args._asaas_webhook_token = asaasWebhookToken.trim();
+      args._pix_expiration_minutes = String(pixExpirationMinutes);
       const { error } = await supabase.rpc("update_tenant_secrets", args as never);
       if (error) throw error;
 
