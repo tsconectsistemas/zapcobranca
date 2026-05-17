@@ -620,6 +620,7 @@ export type Database = {
         Returns: {
           asaas_api_key: string
           asaas_environment: string
+          asaas_webhook_token: string
           evolution_api_key: string
           evolution_api_url: string
           evolution_instance: string
@@ -673,9 +674,9 @@ export type Database = {
         Args: {
           _asaas_api_key?: string
           _asaas_environment?: string
+          _asaas_webhook_token?: string
           _evolution_api_key?: string
           _evolution_api_url?: string
-          _evolution_instance?: string
         }
         Returns: undefined
       }
