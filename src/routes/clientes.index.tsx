@@ -793,6 +793,7 @@ function CustomerRow({
             onEdit={onEdit}
             onSuspend={onSuspend}
             onDelete={onDelete}
+            onRenew={onRenew}
           />
         </div>
       </td>
