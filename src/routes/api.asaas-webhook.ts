@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { normalizeEvolutionApiUrl } from "@/lib/evolution";
+import { extractPixKey } from "@/utils/pix";
 
 /**
  * Public webhook endpoint for Asaas payment notifications.
