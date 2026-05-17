@@ -169,6 +169,26 @@ function ConfiguracoesPage() {
 
   const webhookUrl = `${window.location.origin}/api/asaas-webhook`;
 
+  const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  const fetchWebhookLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from("asaas_webhooks")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      setWebhookLogs(data || []);
+    } catch (error) {
+      console.error("Erro ao carregar logs do webhook:", error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
   useEffect(() => {
     const sync = async () => {
       setLoading(true);
@@ -192,6 +212,8 @@ function ConfiguracoesPage() {
         setHasEvolutionKey(data.evolution.hasApiKey);
         setInstanceName(data.evolution.instanceName);
         setWhatsAppStatus(data.whatsapp.status);
+        
+        await fetchWebhookLogs();
       } catch (error) {
         console.error(error);
         toast.error("Erro ao carregar configurações");
@@ -682,6 +704,48 @@ function ConfiguracoesPage() {
                   {savingAsaas ? <Loader2 className="animate-spin" /> : null}
                   Salvar configurações Asaas
                 </Button>
+              </div>
+
+              <div className="mt-8 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Logs Recentes do Webhook</h4>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={fetchWebhookLogs}
+                    disabled={loadingLogs}
+                  >
+                    <History className={cn("mr-2 h-4 w-4", loadingLogs && "animate-spin")} />
+                    Atualizar Logs
+                  </Button>
+                </div>
+                
+                <div className="rounded-md border bg-slate-50 dark:bg-slate-900 overflow-hidden">
+                  {webhookLogs.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-muted-foreground">
+                      Nenhum evento recebido ainda.
+                    </div>
+                  ) : (
+                    <div className="divide-y">
+                      {webhookLogs.map((log) => (
+                        <div key={log.id} className="p-3 text-xs flex flex-col gap-1">
+                          <div className="flex justify-between items-center">
+                            <span className="font-semibold text-primary">{log.event_type}</span>
+                            <span className="text-muted-foreground">
+                              {new Date(log.created_at).toLocaleString("pt-BR")}
+                            </span>
+                          </div>
+                          <div className="text-muted-foreground truncate font-mono">
+                            ID: {log.payment_id || "N/A"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Exibindo os últimos 10 eventos recebidos pelo servidor.
+                </p>
               </div>
             </CardContent>
           </Card>
