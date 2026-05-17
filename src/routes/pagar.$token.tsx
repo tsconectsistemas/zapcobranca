@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { ChevronDown, Copy, Check, AlertCircle } from "lucide-react";
+import { ChevronDown, Copy, Check, AlertCircle, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,9 @@ interface PaymentInfo {
   pix_emv_payload: string | null;
   plan: string | null;
   company_name: string;
+  pix_expiration_minutes: number;
+  server_time: string;
+  payload_updated_at: string;
 }
 
 function formatCurrency(v: number | null | undefined): string {
@@ -88,6 +91,7 @@ function PagarPage() {
   const [info, setInfo] = useState<PaymentInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
   const [copied, setCopied] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
 
@@ -102,7 +106,19 @@ function PagarPage() {
       if (error || !data || data.length === 0) {
         setNotFound(true);
       } else {
-        setInfo(data[0] as PaymentInfo);
+        const paymentData = data[0] as unknown as PaymentInfo;
+        setInfo(paymentData);
+
+        // Check expiration
+        if (paymentData.payload_updated_at && paymentData.server_time) {
+          const updated = new Date(paymentData.payload_updated_at).getTime();
+          const now = new Date(paymentData.server_time).getTime();
+          const diffMinutes = (now - updated) / (1000 * 60);
+          
+          if (diffMinutes > (paymentData.pix_expiration_minutes || 60)) {
+            setIsExpired(true);
+          }
+        }
       }
       setLoading(false);
     })();
@@ -237,7 +253,19 @@ function PagarPage() {
         </Card>
 
         {/* QR Code */}
-        {pixPayload ? (
+        {isExpired ? (
+          <Card className="border-red-100 bg-red-50/50">
+            <CardContent className="pt-8 pb-8 text-center space-y-3">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <Clock className="h-6 w-6 text-red-600" />
+              </div>
+              <h2 className="text-lg font-semibold text-red-900">QR Code Expirado</h2>
+              <p className="text-sm text-red-700">
+                Por segurança, este código PIX expirou. Peça um novo link de pagamento ou aguarde a próxima atualização.
+              </p>
+            </CardContent>
+          </Card>
+        ) : pixPayload ? (
           <Card>
             <CardContent className="pt-5 pb-5 space-y-3 text-center">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -262,7 +290,7 @@ function PagarPage() {
         )}
 
         {/* Pix copia e cola */}
-        {pixPayload && (
+        {pixPayload && !isExpired && (
           <Card>
             <CardContent className="pt-5 pb-5 space-y-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">

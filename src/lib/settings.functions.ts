@@ -113,15 +113,16 @@ export const getSettingsSnapshot = createServerFn({ method: "GET" })
         customerCount: customerCount ?? 0,
       },
       asaas: {
-        environment: secretRow?.asaas_environment === "production" ? "production" : "sandbox",
-        hasApiKey: Boolean(secretRow?.asaas_api_key),
-        webhookToken: secretRow?.asaas_webhook_token ?? "",
+        environment: (secretRow as any)?.asaas_environment === "production" ? "production" : "sandbox",
+        hasApiKey: Boolean((secretRow as any)?.asaas_api_key),
+        webhookToken: (secretRow as any)?.asaas_webhook_token ?? "",
+        pixExpirationMinutes: (secretRow as any)?.pix_expiration_minutes ?? 60,
       },
       evolution: {
-        apiUrl: normalizeEvolutionApiUrl(secretRow?.evolution_api_url ?? ""),
-        hasApiKey: Boolean(secretRow?.evolution_api_key),
+        apiUrl: normalizeEvolutionApiUrl((secretRow as any)?.evolution_api_url ?? ""),
+        hasApiKey: Boolean((secretRow as any)?.evolution_api_key),
         instanceName:
-          secretRow?.evolution_instance ?? `zapcobranca_${tenant.id.replace(/-/g, "").slice(0, 8)}`,
+          (secretRow as any)?.evolution_instance ?? `zapcobranca_${tenant.id.replace(/-/g, "").slice(0, 8)}`,
       },
       whatsapp: {
         status: session?.status ?? "disconnected",
