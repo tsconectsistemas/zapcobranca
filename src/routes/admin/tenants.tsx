@@ -66,31 +66,10 @@ function AdminTenants() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data: tData, error: tErr } = await supabase
-        .from("tenants")
-        .select("id, company_name, email, plan, whatsapp, active, created_at, max_customers")
-        .order("created_at", { ascending: false });
+      const { data: tData, error: tErr } = await supabase.rpc("get_admin_tenants");
 
       if (tErr) throw tErr;
-
-      const tenantIds = (tData || []).map(t => t.id);
-      if (tenantIds.length > 0) {
-        const { data: counts } = await supabase
-          .from("customers")
-          .select("tenant_id");
-        
-        const countMap = (counts || []).reduce((acc: any, curr) => {
-          acc[curr.tenant_id] = (acc[curr.tenant_id] || 0) + 1;
-          return acc;
-        }, {});
-
-        setTenants((tData || []).map(t => ({
-          ...t,
-          customers_count: countMap[t.id] || 0
-        })) as TenantListItem[]);
-      } else {
-        setTenants([]);
-      }
+      setTenants(tData as unknown as TenantListItem[]);
     } catch (err) {
       console.error("Error fetching tenants:", err);
       toast.error("Erro ao carregar revendas");
