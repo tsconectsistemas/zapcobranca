@@ -596,6 +596,7 @@ function ConfiguracoesPage() {
                 )}
               </div>
 
+              <div className="flex justify-end">
                 <Button onClick={handleSaveProfile} disabled={savingProfile || loading}>
                   {savingProfile ? <Loader2 className="animate-spin" /> : null}
                   Salvar dados
