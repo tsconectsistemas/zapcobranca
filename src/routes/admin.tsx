@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useLocation, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, Navigate, Link } from "@tanstack/react-router";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { AdminRoute } from "@/components/AdminRoute";
 import { Button } from "@/components/ui/button";
@@ -111,9 +111,9 @@ function AdminLayout() {
           {menuItems.map((item) => {
             const active = pathname.startsWith(item.to);
             return (
-              <a
+              <Link
                 key={item.to}
-                href={item.to}
+                to={item.to}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group",
                   active 
@@ -123,7 +123,7 @@ function AdminLayout() {
               >
                 <item.icon className={cn("h-4 w-4", active ? "text-white" : "text-gray-500 group-hover:text-gray-300")} />
                 {item.label}
-              </a>
+              </Link>
             );
           })}
         </nav>
