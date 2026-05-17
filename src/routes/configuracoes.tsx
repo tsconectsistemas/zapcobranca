@@ -187,6 +187,7 @@ function ConfiguracoesPage() {
         setAsaasEnvironment(data.asaas.environment);
         setHasAsaasKey(data.asaas.hasApiKey);
         setAsaasWebhookToken(data.asaas.webhookToken);
+        setPixExpirationMinutes(data.asaas.pixExpirationMinutes);
         setEvolutionApiUrl(data.evolution.apiUrl);
         setHasEvolutionKey(data.evolution.hasApiKey);
         setInstanceName(data.evolution.instanceName);
