@@ -241,6 +241,50 @@ function AdminPlanos() {
                   onCheckedChange={(val) => setEditingPlan({...editingPlan, is_active: val})}
                 />
               </div>
+
+              <div className="space-y-3">
+                <Label>Benefícios do Plano</Label>
+                <div className="space-y-2">
+                  {editingPlan.features.map((feature, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <Input 
+                        value={feature}
+                        onChange={(e) => {
+                          const newFeatures = [...editingPlan.features];
+                          newFeatures[idx] = e.target.value;
+                          setEditingPlan({...editingPlan, features: newFeatures});
+                        }}
+                        className="bg-[#0F1117] border-white/10 text-xs h-8"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-gray-500 hover:text-red-500"
+                        onClick={() => {
+                          const newFeatures = editingPlan.features.filter((_, i) => i !== idx);
+                          setEditingPlan({...editingPlan, features: newFeatures});
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full border-dashed border-white/10 text-gray-500 hover:text-white h-8 text-xs"
+                    onClick={() => {
+                      setEditingPlan({
+                        ...editingPlan, 
+                        features: [...editingPlan.features, "Novo benefício"]
+                      });
+                    }}
+                  >
+                    <Plus className="h-3 w-3 mr-2" />
+                    Adicionar benefício
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 
