@@ -393,6 +393,7 @@ export type Database = {
           evolution_api_key: string | null
           evolution_api_url: string | null
           evolution_instance: string | null
+          pix_expiration_minutes: number | null
           tenant_id: string
           updated_at: string | null
         }
@@ -403,6 +404,7 @@ export type Database = {
           evolution_api_key?: string | null
           evolution_api_url?: string | null
           evolution_instance?: string | null
+          pix_expiration_minutes?: number | null
           tenant_id: string
           updated_at?: string | null
         }
@@ -413,6 +415,7 @@ export type Database = {
           evolution_api_key?: string | null
           evolution_api_url?: string | null
           evolution_instance?: string | null
+          pix_expiration_minutes?: number | null
           tenant_id?: string
           updated_at?: string | null
         }
@@ -604,17 +607,19 @@ export type Database = {
           status: string
         }[]
       }
-      get_public_payment_info: {
-        Args: { _token: string }
-        Returns: {
-          company_name: string
-          customer_name: string
-          expiration_date: string
-          monthly_value: number
-          pix_emv_payload: string
-          plan: string
-        }[]
-      }
+      get_public_payment_info:
+        | {
+            Args: { _token: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.get_public_payment_info(_token => text), public.get_public_payment_info(_token => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"[]
+          }
+        | {
+            Args: { _token: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.get_public_payment_info(_token => text), public.get_public_payment_info(_token => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"[]
+          }
       get_tenant_secrets: {
         Args: { _tenant_id: string }
         Returns: {
@@ -670,16 +675,28 @@ export type Database = {
         }
         Returns: undefined
       }
-      update_tenant_secrets: {
-        Args: {
-          _asaas_api_key?: string
-          _asaas_environment?: string
-          _asaas_webhook_token?: string
-          _evolution_api_key?: string
-          _evolution_api_url?: string
-        }
-        Returns: undefined
-      }
+      update_tenant_secrets:
+        | {
+            Args: {
+              _asaas_api_key?: string
+              _asaas_environment?: string
+              _asaas_webhook_token?: string
+              _evolution_api_key?: string
+              _evolution_api_url?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _asaas_api_key?: string
+              _asaas_environment?: string
+              _asaas_webhook_token?: string
+              _evolution_api_key?: string
+              _evolution_api_url?: string
+              _pix_expiration_minutes?: number
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       [_ in never]: never
