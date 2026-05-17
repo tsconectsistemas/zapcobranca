@@ -144,12 +144,12 @@ function AdminTenants() {
 
   const handleSearch = (val: string) => {
     setSearch(val);
-    navigate({ search: (prev: any) => ({ ...prev, q: val }) });
+    navigate({ search: (prev) => ({ ...prev, q: val }) });
   };
 
   const handleFilter = (val: string) => {
     setActiveFilter(val);
-    navigate({ search: (prev: any) => ({ ...prev, filter: val }) });
+    navigate({ search: (prev) => ({ ...prev, filter: val }) });
   };
 
   const deleteTenant = async (tenant: TenantListItem) => {
