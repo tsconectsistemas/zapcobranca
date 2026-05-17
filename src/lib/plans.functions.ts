@@ -103,7 +103,7 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
           if (pay?.id) {
             asaasPaymentId = pay.id;
             const qrRes = await fetch(`${baseUrl}/payments/${pay.id}/pixQrCode`, {
-              headers: { access_token: asaasKey },
+              headers: { access_token: asaasKey, "User-Agent": "ZapCobranca-App" },
             });
             const qr = (await qrRes.json()) as { payload?: string; encodedImage?: string };
             pixEmv = qr.payload ?? null;
