@@ -389,6 +389,7 @@ export type Database = {
         Row: {
           asaas_api_key: string | null
           asaas_environment: string | null
+          asaas_webhook_token: string | null
           evolution_api_key: string | null
           evolution_api_url: string | null
           evolution_instance: string | null
@@ -398,6 +399,7 @@ export type Database = {
         Insert: {
           asaas_api_key?: string | null
           asaas_environment?: string | null
+          asaas_webhook_token?: string | null
           evolution_api_key?: string | null
           evolution_api_url?: string | null
           evolution_instance?: string | null
@@ -407,6 +409,7 @@ export type Database = {
         Update: {
           asaas_api_key?: string | null
           asaas_environment?: string | null
+          asaas_webhook_token?: string | null
           evolution_api_key?: string | null
           evolution_api_url?: string | null
           evolution_instance?: string | null
