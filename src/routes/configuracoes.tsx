@@ -621,6 +621,21 @@ function ConfiguracoesPage() {
                   Garante que apenas o Asaas possa enviar notificações para seu app.
                 </p>
               </div>
+              
+              <div className="space-y-1.5">
+                <Label htmlFor="pix-expiration">Expiração do PIX (minutos)</Label>
+                <Input
+                  id="pix-expiration"
+                  type="number"
+                  min={5}
+                  max={1440}
+                  value={pixExpirationMinutes}
+                  onChange={(e) => setPixExpirationMinutes(Number(e.target.value))}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Tempo que o PIX fica válido após ser gerado (padrão: 60 min).
+                </p>
+              </div>
 
               <div className="space-y-1.5">
                 <Label>URL do Webhook</Label>
