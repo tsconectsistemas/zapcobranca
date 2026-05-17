@@ -27,6 +27,9 @@ interface PaymentInfo {
   pix_emv_payload: string | null;
   plan: string | null;
   company_name: string;
+  pix_expiration_minutes: number;
+  server_time: string;
+  payload_updated_at: string;
 }
 
 function formatCurrency(v: number | null | undefined): string {
