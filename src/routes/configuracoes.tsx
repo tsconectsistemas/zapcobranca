@@ -153,6 +153,7 @@ function ConfiguracoesPage() {
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingAsaas, setSavingAsaas] = useState(false);
+  const [testingAsaas, setTestingAsaas] = useState(false);
   const [savingWhatsApp, setSavingWhatsApp] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
