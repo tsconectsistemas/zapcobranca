@@ -701,28 +701,17 @@ export type Database = {
         }
         Returns: undefined
       }
-      update_tenant_secrets:
-        | {
-            Args: {
-              _asaas_api_key?: string
-              _asaas_environment?: string
-              _asaas_webhook_token?: string
-              _evolution_api_key?: string
-              _evolution_api_url?: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              _asaas_api_key?: string
-              _asaas_environment?: string
-              _asaas_webhook_token?: string
-              _evolution_api_key?: string
-              _evolution_api_url?: string
-              _pix_expiration_minutes?: number
-            }
-            Returns: undefined
-          }
+      update_tenant_secrets: {
+        Args: {
+          _asaas_api_key?: string
+          _asaas_environment?: string
+          _asaas_webhook_token?: string
+          _evolution_api_key?: string
+          _evolution_api_url?: string
+          _pix_expiration_minutes?: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
