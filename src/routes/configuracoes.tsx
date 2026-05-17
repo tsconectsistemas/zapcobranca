@@ -167,7 +167,7 @@ function ConfiguracoesPage() {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const webhookUrl = `${window.location.origin}/api/asaas-webhook`;
+  const webhookUrl = `https://dxxbqeqdwagmtynfsmzw.supabase.co/functions/v1/asaas-webhook`;
 
   const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
