@@ -59,7 +59,7 @@ interface AdminMetrics {
 
 interface RecentTenant {
   id: string;
-  name: string;
+  company_name: string;
   email: string;
   plan: string;
   whatsapp: string | null;
@@ -82,7 +82,7 @@ function AdminDashboard() {
         supabase.rpc("get_admin_metrics"),
         supabase
           .from("tenants")
-          .select("id, name, email, plan, whatsapp, created_at, active")
+          .select("id, company_name, email, plan, whatsapp, created_at, active")
           .order("created_at", { ascending: false })
           .limit(10)
       ]);
@@ -108,7 +108,7 @@ function AdminDashboard() {
         setRecentTenants((tData || []).map(t => ({
           ...t,
           customers_count: countMap[t.id] || 0
-        })) as RecentTenant[]);
+        })) as unknown as RecentTenant[]);
       } else {
         setRecentTenants([]);
       }
@@ -339,7 +339,7 @@ function AdminDashboard() {
                 <tr key={t.id} className="hover:bg-white/5 transition-colors group">
                   <td className="px-6 py-4">
                     <div>
-                      <p className="font-semibold text-white">{t.name}</p>
+                      <p className="font-semibold text-white">{t.company_name}</p>
                       <p className="text-xs text-gray-500">{t.email}</p>
                     </div>
                   </td>
