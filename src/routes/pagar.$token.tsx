@@ -140,9 +140,13 @@ function PagarPage() {
     if (!value) return info.pix_emv_payload;
     try {
       const key = extractPixKey(info.pix_emv_payload);
-      if (!key || key === info.pix_emv_payload && info.pix_emv_payload.startsWith("000201")) {
+      
+      // Se não conseguimos extrair uma chave válida ou se for um link dinâmico (URL),
+      // não tentamos reconstruir o payload para evitar erros no banco (ex: InfinitePay)
+      if (!key || key.includes("http") || (key === info.pix_emv_payload && info.pix_emv_payload.startsWith("000201"))) {
         return info.pix_emv_payload;
       }
+
       return buildPixPayload(
         key,
         value,
