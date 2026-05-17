@@ -253,7 +253,19 @@ function PagarPage() {
         </Card>
 
         {/* QR Code */}
-        {pixPayload ? (
+        {isExpired ? (
+          <Card className="border-red-100 bg-red-50/50">
+            <CardContent className="pt-8 pb-8 text-center space-y-3">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <Clock className="h-6 w-6 text-red-600" />
+              </div>
+              <h2 className="text-lg font-semibold text-red-900">QR Code Expirado</h2>
+              <p className="text-sm text-red-700">
+                Por segurança, este código PIX expirou. Peça um novo link de pagamento ou aguarde a próxima atualização.
+              </p>
+            </CardContent>
+          </Card>
+        ) : pixPayload ? (
           <Card>
             <CardContent className="pt-5 pb-5 space-y-3 text-center">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
