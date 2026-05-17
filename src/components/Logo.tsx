@@ -3,9 +3,10 @@ import { Zap } from "lucide-react";
 interface LogoProps {
   showTagline?: boolean;
   size?: "sm" | "md" | "lg";
+  dark?: boolean;
 }
 
-export function Logo({ showTagline = false, size = "md" }: LogoProps) {
+export function Logo({ showTagline = false, size = "md", dark = false }: LogoProps) {
   const sizes = {
     sm: { icon: "h-5 w-5", text: "text-lg", tagline: "text-[10px]" },
     md: { icon: "h-6 w-6", text: "text-xl", tagline: "text-xs" },
@@ -17,7 +18,7 @@ export function Logo({ showTagline = false, size = "md" }: LogoProps) {
     <div className="flex flex-col">
       <div className="flex items-center gap-2">
         <Zap className={`${s.icon} text-primary fill-primary`} />
-        <span className={`${s.text} font-bold tracking-tight text-foreground`}>
+        <span className={`${s.text} font-bold tracking-tight ${dark ? "text-white" : "text-foreground"}`}>
           Zap<span className="text-primary">Cobrança</span>
         </span>
       </div>
