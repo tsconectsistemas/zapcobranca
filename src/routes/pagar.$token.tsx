@@ -91,6 +91,7 @@ function PagarPage() {
   const [info, setInfo] = useState<PaymentInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
   const [copied, setCopied] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
 
