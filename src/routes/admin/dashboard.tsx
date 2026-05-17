@@ -13,7 +13,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   RefreshCw,
-  Eye
+  Eye,
+  Zap,
+  ChevronRight
 } from "lucide-react";
 import { 
   PieChart, 
