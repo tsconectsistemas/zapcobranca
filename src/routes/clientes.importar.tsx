@@ -156,7 +156,14 @@ function ImportarPage() {
     const BATCH = 50;
     for (let i = 0; i < toImport.length; i += BATCH) {
       const batch = toImport.slice(i, i + BATCH);
-      const payload = batch.map((r) => ({
+      
+      // Deduplicate by username to avoid "ON CONFLICT DO UPDATE command cannot affect row a second time"
+      const uniqueRows = new Map();
+      batch.forEach(r => {
+        uniqueRows.set(r.username, r);
+      });
+
+      const payload = Array.from(uniqueRows.values()).map((r) => ({
         tenant_id: tenant.id,
         username: r.username,
         password_iptv: r.password_iptv,
