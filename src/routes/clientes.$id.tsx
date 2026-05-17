@@ -340,6 +340,7 @@ ${customer.pix_emv_payload ? `Ou copie o código PIX abaixo:\n${customer.pix_emv
     expiration_date: customer.expiration_date,
     status: customer.status ?? "active",
     pix_emv_payload: customer.pix_emv_payload,
+    asaas_customer_id: customer.asaas_customer_id,
     notes: customer.notes,
   };
 

@@ -47,7 +47,7 @@ export interface CustomerFormData {
   expiration_date: string | null; // YYYY-MM-DD
   status: string;
   pix_emv_payload: string | null;
-  asaas_customer_id: string | null;
+  asaas_customer_id?: string | null;
   notes: string | null;
 }
 

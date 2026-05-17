@@ -258,6 +258,7 @@ function ClientesPage() {
       expiration_date: c.expiration_date,
       status: c.status ?? "active",
       pix_emv_payload: c.pix_emv_payload,
+      asaas_customer_id: c.asaas_customer_id,
       notes: c.notes,
     });
     setModalOpen(true);
