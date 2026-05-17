@@ -185,6 +185,7 @@ function ConfiguracoesPage() {
         setNotificationSettings(data.tenant.notificationSettings);
         setAsaasEnvironment(data.asaas.environment);
         setHasAsaasKey(data.asaas.hasApiKey);
+        setAsaasWebhookToken(data.asaas.webhookToken);
         setEvolutionApiUrl(data.evolution.apiUrl);
         setHasEvolutionKey(data.evolution.hasApiKey);
         setInstanceName(data.evolution.instanceName);
