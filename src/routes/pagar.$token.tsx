@@ -134,20 +134,24 @@ function PagarPage() {
 
   const pixPayload = useMemo(() => {
     if (!info?.pix_emv_payload) return "";
+    
+    // IMPORTANTE: Para evitar erros como PIXPP02 (Banco Inter) ou falhas em outros bancos,
+    // não alteramos o payload original se ele já for um código PIX completo (EMV).
+    // Reconstruir o payload pode mudar o CRC ou o TxID original, invalidando o QR Code.
+    if (info.pix_emv_payload.startsWith("000201")) {
+      return info.pix_emv_payload;
+    }
+
+    // Se for apenas uma chave solta (não começa com 000201), aí sim construímos o payload
     const value =
       typeof info.monthly_value === "number" && info.monthly_value > 0
         ? info.monthly_value
         : 0;
+
     if (!value) return info.pix_emv_payload;
+
     try {
       const key = extractPixKey(info.pix_emv_payload);
-      
-      // Se não conseguimos extrair uma chave válida ou se for um link dinâmico (URL),
-      // não tentamos reconstruir o payload para evitar erros no banco (ex: InfinitePay)
-      if (!key || key.includes("http") || (key === info.pix_emv_payload && info.pix_emv_payload.startsWith("000201"))) {
-        return info.pix_emv_payload;
-      }
-
       return buildPixPayload(
         key,
         value,
