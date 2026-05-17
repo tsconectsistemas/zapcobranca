@@ -24,6 +24,7 @@ export const testAsaasConnection = createServerFn({ method: "POST" })
       const response = await fetch(`${baseUrl}/finance/balance`, {
         headers: {
           access_token: apiKey,
+          "User-Agent": "ZapCobranca-App",
         },
       });
 
