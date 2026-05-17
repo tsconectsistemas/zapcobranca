@@ -115,7 +115,11 @@ function PagarPage() {
           const now = new Date(paymentData.server_time).getTime();
           const diffMinutes = (now - updated) / (1000 * 60);
           
-          if (diffMinutes > (paymentData.pix_expiration_minutes || 60)) {
+          // Only enforce expiration for dynamic PIX (URLs) or if explicitly short
+          const isDynamic = paymentData.pix_emv_payload?.includes("http");
+          const expirationLimit = paymentData.pix_expiration_minutes || (isDynamic ? 1440 : 43200); // 24h for dynamic, 30 days for static
+          
+          if (diffMinutes > expirationLimit) {
             setIsExpired(true);
           }
         }
