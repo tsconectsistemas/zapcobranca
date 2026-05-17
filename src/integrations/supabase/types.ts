@@ -638,6 +638,7 @@ export type Database = {
           asaas_webhook_token: string
           evolution_api_key: string
           evolution_api_url: string
+          evolution_instance: string
           external_webhook_enabled: boolean
           external_webhook_secret: string
           external_webhook_url: string
