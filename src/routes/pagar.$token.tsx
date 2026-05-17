@@ -106,7 +106,19 @@ function PagarPage() {
       if (error || !data || data.length === 0) {
         setNotFound(true);
       } else {
-        setInfo(data[0] as unknown as PaymentInfo);
+        const paymentData = data[0] as unknown as PaymentInfo;
+        setInfo(paymentData);
+
+        // Check expiration
+        if (paymentData.payload_updated_at && paymentData.server_time) {
+          const updated = new Date(paymentData.payload_updated_at).getTime();
+          const now = new Date(paymentData.server_time).getTime();
+          const diffMinutes = (now - updated) / (1000 * 60);
+          
+          if (diffMinutes > (paymentData.pix_expiration_minutes || 60)) {
+            setIsExpired(true);
+          }
+        }
       }
       setLoading(false);
     })();
