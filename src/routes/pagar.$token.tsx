@@ -135,31 +135,9 @@ function PagarPage() {
   const pixPayload = useMemo(() => {
     if (!info?.pix_emv_payload) return "";
     
-    // Simplificando ao máximo: Priorizamos SEMPRE o payload original vindo do banco (Asaas).
-    // Se ele começa com 000201, é um código pronto e não deve ser mexido.
-    if (info.pix_emv_payload.trim().startsWith("000201")) {
-      return info.pix_emv_payload.trim();
-    }
-
-    // Apenas se NÃO for um código completo, tentamos montar um.
-    const value = typeof info.monthly_value === "number" ? info.monthly_value : 0;
-    
-    try {
-      const key = extractPixKey(info.pix_emv_payload);
-      // Se for uma chave válida (e não o próprio payload), montamos o código.
-      if (key && key !== info.pix_emv_payload) {
-        return buildPixPayload(
-          key,
-          value,
-          info.company_name || "ZAPCOBRANCA",
-          "SAO PAULO"
-        );
-      }
-    } catch (e) {
-      console.error("Erro ao processar chave PIX:", e);
-    }
-
-    return info.pix_emv_payload;
+    // Simplificando ao máximo: Usamos o payload original vindo do banco (Asaas) sem NENHUMA alteração.
+    // Qualquer tentativa de remontar o QR Code pode quebrar a assinatura CRC16 do banco.
+    return info.pix_emv_payload.trim();
   }, [info]);
 
   const handleCopy = async () => {
