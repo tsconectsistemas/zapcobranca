@@ -149,6 +149,9 @@ export const saveTenantProfile = createServerFn({ method: "POST" })
         company_name: data.companyName,
         whatsapp: data.whatsapp || null,
         logo_url: data.logoUrl || null,
+        external_webhook_url: data.externalWebhookUrl || null,
+        external_webhook_enabled: data.externalWebhookEnabled ?? false,
+        external_webhook_secret: data.externalWebhookSecret || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", tenant.id);
