@@ -23,6 +23,7 @@ import { Route as ClientesImportarRouteImport } from './routes/clientes.importar
 import { Route as ClientesCompletarRouteImport } from './routes/clientes.completar'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
 import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas-webhook'
+import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as ApiPublicPlanWebhookRouteImport } from './routes/api.public.plan-webhook'
 import { Route as ApiPublicHooksNotifyExpiringRouteImport } from './routes/api.public.hooks.notify-expiring'
 
@@ -96,6 +97,11 @@ const ApiAsaasWebhookRoute = ApiAsaasWebhookRouteImport.update({
   path: '/api/asaas-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPlanWebhookRoute = ApiPublicPlanWebhookRouteImport.update({
   id: '/api/public/plan-webhook',
   path: '/api/public/plan-webhook',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/planos': typeof PlanosRoute
   '/whatsapp': typeof WhatsappRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/completar': typeof ClientesCompletarRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/planos': typeof PlanosRoute
   '/whatsapp': typeof WhatsappRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/completar': typeof ClientesCompletarRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/planos': typeof PlanosRoute
   '/whatsapp': typeof WhatsappRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/completar': typeof ClientesCompletarRoute
@@ -174,6 +183,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/planos'
     | '/whatsapp'
+    | '/admin/login'
     | '/api/asaas-webhook'
     | '/clientes/$id'
     | '/clientes/completar'
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/planos'
     | '/whatsapp'
+    | '/admin/login'
     | '/api/asaas-webhook'
     | '/clientes/$id'
     | '/clientes/completar'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/planos'
     | '/whatsapp'
+    | '/admin/login'
     | '/api/asaas-webhook'
     | '/clientes/$id'
     | '/clientes/completar'
@@ -229,6 +241,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PlanosRoute: typeof PlanosRoute
   WhatsappRoute: typeof WhatsappRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   ApiAsaasWebhookRoute: typeof ApiAsaasWebhookRoute
   ClientesIdRoute: typeof ClientesIdRoute
   ClientesCompletarRoute: typeof ClientesCompletarRoute
@@ -339,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAsaasWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/plan-webhook': {
       id: '/api/public/plan-webhook'
       path: '/api/public/plan-webhook'
@@ -365,6 +385,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PlanosRoute: PlanosRoute,
   WhatsappRoute: WhatsappRoute,
+  AdminLoginRoute: AdminLoginRoute,
   ApiAsaasWebhookRoute: ApiAsaasWebhookRoute,
   ClientesIdRoute: ClientesIdRoute,
   ClientesCompletarRoute: ClientesCompletarRoute,
