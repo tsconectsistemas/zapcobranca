@@ -115,9 +115,10 @@ function PagarPage() {
           const now = new Date(paymentData.server_time).getTime();
           const diffMinutes = (now - updated) / (1000 * 60);
           
-          // Only enforce expiration for dynamic PIX (URLs) or if explicitly short
-          const isDynamic = paymentData.pix_emv_payload?.includes("http");
-          const expirationLimit = paymentData.pix_expiration_minutes || (isDynamic ? 1440 : 43200); // 24h for dynamic, 30 days for static
+          // O link da página nunca expira para o cliente, permitindo pagamento a qualquer momento.
+          // A expiração visual (isExpired) só será ativada se o tempo for absurdamente longo (ex: 90 dias)
+          // ou se houver uma configuração específica muito curta no tenant_secrets.
+          const expirationLimit = paymentData.pix_expiration_minutes || 129600; // 90 dias padrão
           
           if (diffMinutes > expirationLimit) {
             setIsExpired(true);
