@@ -134,7 +134,7 @@ function AdminLandingPage() {
             title="Hero Section" 
             icon={Zap}
             content={sections.hero}
-            onChange={(content) => updateSection("hero", content)}
+            onChange={(content: any) => updateSection("hero", content)}
             fields={[
               { key: "badge", label: "Texto do Badge", type: "text" },
               { key: "title", label: "Título Principal", type: "text" },
@@ -146,12 +146,12 @@ function AdminLandingPage() {
 
           <StatsEditor 
             content={sections.stats}
-            onChange={(content) => updateSection("stats", content)}
+            onChange={(content: any) => updateSection("stats", content)}
           />
 
           <FeaturesEditor 
             content={sections.features}
-            onChange={(content) => updateSection("features", content)}
+            onChange={(content: any) => updateSection("features", content)}
           />
 
           <div className="bg-[#1A1D27] rounded-xl border border-white/5 p-4 flex items-center justify-between text-sm text-gray-500 italic">
