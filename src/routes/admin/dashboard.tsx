@@ -83,37 +83,14 @@ function AdminDashboard() {
     try {
       const [{ data: mData, error: mErr }, { data: tData, error: tErr }] = await Promise.all([
         supabase.rpc("get_admin_metrics"),
-        supabase
-          .from("tenants")
-          .select("id, company_name, email, plan, whatsapp, created_at, active")
-          .order("created_at", { ascending: false })
-          .limit(10)
+        supabase.rpc("get_admin_tenants")
       ]);
 
       if (mErr) throw mErr;
       if (tErr) throw tErr;
 
       setMetrics(mData as unknown as AdminMetrics);
-      
-      const tenantIds = (tData || []).map(t => t.id);
-      if (tenantIds.length > 0) {
-        const { data: counts } = await supabase
-          .from("customers")
-          .select("tenant_id")
-          .in("tenant_id", tenantIds);
-        
-        const countMap = (counts || []).reduce((acc: any, curr) => {
-          acc[curr.tenant_id] = (acc[curr.tenant_id] || 0) + 1;
-          return acc;
-        }, {});
-
-        setRecentTenants((tData || []).map(t => ({
-          ...t,
-          customers_count: countMap[t.id] || 0
-        })) as unknown as RecentTenant[]);
-      } else {
-        setRecentTenants([]);
-      }
+      setRecentTenants((tData || []).slice(0, 10) as unknown as RecentTenant[]);
 
     } catch (err) {
       console.error("Error fetching admin dashboard data:", err);
