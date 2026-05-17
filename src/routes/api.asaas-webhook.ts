@@ -79,6 +79,9 @@ export const Route = createFileRoute("/api/asaas-webhook")({
         const event = payload?.event as string | undefined;
         const payment = payload?.payment;
 
+        // Log using RPC to ensure it's recorded even if matching fails
+        await supabaseAdmin.rpc("handle_asaas_webhook", { _payload: payload });
+
         if (!event || !PAYMENT_CONFIRMED_EVENTS.has(event)) {
           return json({ ignored: true, event: event ?? null }, 200);
         }
