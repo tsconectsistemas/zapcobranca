@@ -134,9 +134,15 @@ function PagarPage() {
   const pixPayload = useMemo(() => {
     if (!info?.pix_emv_payload) return "";
     
-    // Simplificando ao máximo: Usamos o payload original vindo do banco (Asaas) sem NENHUMA alteração.
-    // Qualquer tentativa de remontar o QR Code pode quebrar a assinatura CRC16 do banco.
-    return info.pix_emv_payload.trim();
+    // Agora utilizamos a lógica TLV do Google Sheets que você forneceu, 
+    // garantindo que o valor e o CRC16 sejam recalculados corretamente.
+    try {
+      const valor = typeof info.monthly_value === "number" ? info.monthly_value : 0;
+      return inserirValorNoPix_TLV(info.pix_emv_payload, valor);
+    } catch (e) {
+      console.error("Erro ao processar PIX TLV:", e);
+      return info.pix_emv_payload.trim();
+    }
   }, [info]);
 
   const handleCopy = async () => {
