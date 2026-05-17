@@ -5,6 +5,11 @@
 export function extractPixKey(emvPayload: string): string {
   if (!emvPayload) return "";
 
+  // Se não parece um payload EMV (não começa com 000201), assume que já é a chave
+  if (!emvPayload.startsWith("000201")) {
+    return emvPayload;
+  }
+
   // Tentativa via regex (campo 26, subcampo 01)
   const match = emvPayload.match(
     /2658[0-9]{2}0014BR\.GOV\.BCB\.PIX[0-9]{2}(.+?)(?=52)/i
@@ -38,7 +43,7 @@ export function extractPixKey(emvPayload: string): string {
     }
     i += 4 + len;
   }
-  return "";
+  return emvPayload; // Retorna o original se não encontrar chave mas não for EMV
 }
 
 export function buildPixPayload(
@@ -46,7 +51,7 @@ export function buildPixPayload(
   valor: number,
   nome: string,
   cidade: string,
-  txId: string = "zapcobranca"
+  txId: string = "***"
 ): string {
   const field = (id: string, val: string) =>
     id + val.length.toString().padStart(2, "0") + val;
@@ -70,7 +75,7 @@ export function buildPixPayload(
 
   const payload =
     "000201" +
-    "010212" +
+    "010211" +
     merchant +
     "52040000" +
     "5303986" +
@@ -86,10 +91,10 @@ export function buildPixPayload(
     for (let i = 0; i < str.length; i++) {
       crc ^= str.charCodeAt(i) << 8;
       for (let j = 0; j < 8; j++) {
-        crc = crc & 0x8000 ? (crc << 1) ^ 0x1021 : crc << 1;
+        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
       }
     }
-    return (crc & 0xffff).toString(16).toUpperCase().padStart(4, "0");
+    return crc.toString(16).toUpperCase().padStart(4, "0");
   }
 
   return payload + crc16(payload);
