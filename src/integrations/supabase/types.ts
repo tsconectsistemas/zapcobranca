@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      asaas_webhooks: {
+        Row: {
+          created_at: string | null
+          event_type: string | null
+          id: string
+          payload: Json | null
+          payment_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type?: string | null
+          id?: string
+          payload?: Json | null
+          payment_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string | null
+          id?: string
+          payload?: Json | null
+          payment_id?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string | null
@@ -619,6 +643,7 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      handle_asaas_webhook: { Args: { _payload: Json }; Returns: Json }
       start_plan_checkout: {
         Args: { _billing_cycle: string; _plan_id: string }
         Returns: {
