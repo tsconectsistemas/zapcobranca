@@ -548,44 +548,6 @@ function ConfiguracoesPage() {
 
               <Separator className="my-2" />
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="webhook-enabled">Webhook Externo (IPTV)</Label>
-                    <p className="text-[11px] text-muted-foreground">Notificar seu servidor IPTV ao receber pagamentos.</p>
-                  </div>
-                  <Switch
-                    id="webhook-enabled"
-                    checked={externalWebhookEnabled}
-                    onCheckedChange={setExternalWebhookEnabled}
-                  />
-                </div>
-
-                {externalWebhookEnabled && (
-                  <>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="external-webhook-url">URL do Webhook IPTV</Label>
-                      <Input
-                        id="external-webhook-url"
-                        value={externalWebhookUrl}
-                        onChange={(e) => setExternalWebhookUrl(e.target.value)}
-                        placeholder="https://seu-servidor-iptv.com/webhook"
-                        disabled={loading}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="external-webhook-secret">Secret / Token (opcional)</Label>
-                      <Input
-                        id="external-webhook-secret"
-                        value={externalWebhookSecret}
-                        onChange={(e) => setExternalWebhookSecret(e.target.value)}
-                        placeholder="Token de segurança"
-                        disabled={loading}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
 
               <div className="flex justify-end">
                 <Button onClick={handleSaveProfile} disabled={savingProfile || loading}>

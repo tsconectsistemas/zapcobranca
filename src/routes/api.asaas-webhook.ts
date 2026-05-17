@@ -49,31 +49,6 @@ async function sendWhatsAppConfirmation(
   });
 }
 
-async function forwardWebhook(
-  url: string,
-  payload: any,
-  secret?: string | null,
-) {
-  try {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      "User-Agent": "ZapCobranca-Webhook-Forwarder",
-    };
-    if (secret) {
-      headers["X-Webhook-Secret"] = secret;
-    }
-
-    await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
-    console.log(`[asaas-webhook] Forwarded to ${url}`);
-  } catch (err) {
-    console.error(`[asaas-webhook] Forwarding failed to ${url}:`, err);
-  }
-}
-
 export const Route = createFileRoute("/api/asaas-webhook")({
   server: {
     handlers: {
