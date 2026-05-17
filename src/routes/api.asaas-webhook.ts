@@ -1,17 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { normalizeEvolutionApiUrl } from "@/lib/evolution";
+import { extractPixKey } from "@/utils/pix";
 
 /**
  * Public webhook endpoint for Asaas payment notifications.
  * URL: https://<host>/api/asaas-webhook
- *
- * Security:
- * - Public endpoint (no JWT) — Asaas does not sign requests by default.
- * - Optionally validates a shared token via `asaas-access-token` header
- *   when ASAAS_WEBHOOK_TOKEN is configured.
- * - Uses service-role client only after request validation.
- * - Matches customers by PIX key + tenant scope to prevent cross-tenant writes.
  */
 
 const PAYMENT_CONFIRMED_EVENTS = new Set([
@@ -55,6 +49,31 @@ async function sendWhatsAppConfirmation(
   });
 }
 
+async function forwardWebhook(
+  url: string,
+  payload: any,
+  secret?: string | null,
+) {
+  try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "User-Agent": "ZapCobranca-Webhook-Forwarder",
+    };
+    if (secret) {
+      headers["X-Webhook-Secret"] = secret;
+    }
+
+    await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+    console.log(`[asaas-webhook] Forwarded to ${url}`);
+  } catch (err) {
+    console.error(`[asaas-webhook] Forwarding failed to ${url}:`, err);
+  }
+}
+
 export const Route = createFileRoute("/api/asaas-webhook")({
   server: {
     handlers: {
@@ -69,68 +88,89 @@ export const Route = createFileRoute("/api/asaas-webhook")({
         const event = payload?.event as string | undefined;
         const payment = payload?.payment;
 
-        // Matches customer by PIX key to find the tenant first, then validates token
+        if (event === "TEST") {
+          console.log("[asaas-webhook] Test event received");
+          return json({ success: true, message: "Test event received" }, 200);
+        }
+
         const pixKey: string =
           payment?.pixTransaction?.pixKey ||
           payment?.pixTransaction?.endToEndIdentifier ||
           "";
 
-        if (!pixKey && event !== "TEST") {
-          return json({ matched: false, reason: "no_pix_key" }, 200);
-        }
+        // 1. Find the tenant and customer
+        let tenantId: string | null = null;
+        let customerId: string | null = null;
+        let matchedCustomerData: any = null;
 
-        const { data: matchedCustomer } = await supabaseAdmin
-          .from("customers")
-          .select("id, tenant_id, pix_emv_payload")
-          .not("pix_emv_payload", "is", null)
-          .limit(10000)
-          .then(res => ({
-            data: res.data?.find(c => c.pix_emv_payload?.includes(pixKey))
-          }));
-
-        if (matchedCustomer) {
-          const { data: secrets } = await supabaseAdmin.rpc("get_tenant_secrets", {
-            _tenant_id: matchedCustomer.tenant_id
-          });
-          const expectedToken = secrets?.[0]?.asaas_webhook_token;
-          
-          if (expectedToken) {
-            const provided =
-              request.headers.get("asaas-access-token") ||
-              request.headers.get("Asaas-Access-Token");
-            if (provided !== expectedToken) {
-              return json({ error: "unauthorized_token" }, 401);
-            }
+        if (payment?.id) {
+          const { data: existing } = await supabaseAdmin
+            .from("payments")
+            .select("tenant_id, customer_id")
+            .eq("asaas_payment_id", payment.id)
+            .maybeSingle();
+          if (existing) {
+            tenantId = existing.tenant_id;
+            customerId = existing.customer_id;
           }
         }
 
-        // Log using RPC to ensure it's recorded even if matching fails
+        if (!tenantId && pixKey) {
+          const { data: customers } = await supabaseAdmin
+            .from("customers")
+            .select("id, tenant_id, pix_emv_payload, name, username, whatsapp, expiration_date, monthly_value")
+            .not("pix_emv_payload", "is", null);
+
+          const matched = customers?.find(c => {
+            const extracted = extractPixKey(c.pix_emv_payload || "");
+            return extracted === pixKey || (c.pix_emv_payload && c.pix_emv_payload.includes(pixKey));
+          });
+
+          if (matched) {
+            tenantId = matched.tenant_id;
+            customerId = matched.id;
+            matchedCustomerData = matched;
+          }
+        }
+
+        if (!tenantId) {
+          console.log("[asaas-webhook] No matching customer/tenant found for pixKey:", pixKey);
+          await supabaseAdmin.rpc("handle_asaas_webhook", { _payload: payload });
+          return json({ matched: false, reason: "not_found" }, 200);
+        }
+
+        // 2. Get Secrets & Validate Token
+        const { data: secrets } = await supabaseAdmin.rpc("get_tenant_secrets", {
+          _tenant_id: tenantId
+        });
+        const cfg = secrets?.[0];
+        
+        if (cfg?.asaas_webhook_token) {
+          const provided =
+            request.headers.get("asaas-access-token") ||
+            request.headers.get("Asaas-Access-Token");
+          if (provided !== cfg.asaas_webhook_token) {
+            console.error("[asaas-webhook] Unauthorized token for tenant:", tenantId);
+            return json({ error: "unauthorized_token" }, 401);
+          }
+        }
+
+        // 3. Process Payment (Database RPC)
         await supabaseAdmin.rpc("handle_asaas_webhook", { _payload: payload });
 
         if (!event || !PAYMENT_CONFIRMED_EVENTS.has(event)) {
           return json({ ignored: true, event: event ?? null }, 200);
         }
 
+        // 4. Update Internal State
         try {
-          if (!pixKey) {
-            return json({ matched: false, reason: "no_pix_key" }, 200);
-          }
-
-          const { data: customers, error: searchError } = await supabaseAdmin
+          const matched = matchedCustomerData || (await supabaseAdmin
             .from("customers")
-            .select(
-              "id, tenant_id, expiration_date, monthly_value, name, username, whatsapp, pix_emv_payload",
-            )
-            .not("pix_emv_payload", "is", null)
-            .limit(5000);
+            .select("id, tenant_id, expiration_date, monthly_value, name, username, whatsapp")
+            .eq("id", customerId!)
+            .single()).data;
 
-          if (searchError) throw searchError;
-
-          const matched = customers?.find((c) => c.pix_emv_payload?.includes(pixKey));
-
-          if (!matched) {
-            return json({ matched: false }, 200);
-          }
+          if (!matched) throw new Error("Customer not found after matching");
 
           if (payment?.id) {
             const { data: existing } = await supabaseAdmin
@@ -140,6 +180,7 @@ export const Route = createFileRoute("/api/asaas-webhook")({
               .eq("tenant_id", matched.tenant_id)
               .maybeSingle();
             if (existing) {
+              console.log("[asaas-webhook] Duplicate payment ignored:", payment.id);
               return json({ duplicate: true, payment_id: payment.id }, 200);
             }
           }
@@ -190,6 +231,22 @@ export const Route = createFileRoute("/api/asaas-webhook")({
 
           await sendWhatsAppConfirmation(matched, newExpirationDate, message);
 
+          // 5. Forward to external webhook if enabled
+          if (cfg?.external_webhook_enabled && cfg?.external_webhook_url) {
+            const forwardPayload = {
+              event: "payment.confirmed",
+              paymentId: payment?.id,
+              customerId: matched.id,
+              username: matched.username,
+              name: matched.name,
+              amount: payment?.value || matched.monthly_value,
+              paidAt: new Date().toISOString(),
+              newExpiration: newExpirationDate,
+              raw: payload
+            };
+            await forwardWebhook(cfg.external_webhook_url, forwardPayload, cfg.external_webhook_secret);
+          }
+
           return json(
             {
               success: true,
@@ -199,7 +256,7 @@ export const Route = createFileRoute("/api/asaas-webhook")({
             200,
           );
         } catch (error) {
-          console.error("[asaas-webhook] error:", error);
+          console.error("[asaas-webhook] processing error:", error);
           return json(
             {
               error: error instanceof Error ? error.message : "unknown_error",

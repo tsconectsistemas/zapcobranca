@@ -435,6 +435,9 @@ export type Database = {
           company_name: string
           created_at: string | null
           email: string
+          external_webhook_enabled: boolean | null
+          external_webhook_secret: string | null
+          external_webhook_url: string | null
           id: string
           logo_url: string | null
           max_customers: number | null
@@ -452,6 +455,9 @@ export type Database = {
           company_name: string
           created_at?: string | null
           email: string
+          external_webhook_enabled?: boolean | null
+          external_webhook_secret?: string | null
+          external_webhook_url?: string | null
           id?: string
           logo_url?: string | null
           max_customers?: number | null
@@ -469,6 +475,9 @@ export type Database = {
           company_name?: string
           created_at?: string | null
           email?: string
+          external_webhook_enabled?: boolean | null
+          external_webhook_secret?: string | null
+          external_webhook_url?: string | null
           id?: string
           logo_url?: string | null
           max_customers?: number | null
@@ -630,6 +639,9 @@ export type Database = {
           evolution_api_key: string
           evolution_api_url: string
           evolution_instance: string
+          external_webhook_enabled: boolean
+          external_webhook_secret: string
+          external_webhook_url: string
         }[]
       }
       get_tenant_secrets_status: {
