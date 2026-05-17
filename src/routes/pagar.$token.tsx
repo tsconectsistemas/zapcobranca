@@ -105,7 +105,7 @@ function PagarPage() {
       if (error || !data || data.length === 0) {
         setNotFound(true);
       } else {
-        setInfo(data[0] as PaymentInfo);
+        setInfo(data[0] as unknown as PaymentInfo);
       }
       setLoading(false);
     })();
