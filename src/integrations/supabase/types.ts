@@ -832,6 +832,20 @@ export type Database = {
         }[]
       }
       get_admin_metrics: { Args: never; Returns: Json }
+      get_admin_tenants: {
+        Args: never
+        Returns: {
+          active: boolean
+          company_name: string
+          created_at: string
+          customers_count: number
+          email: string
+          id: string
+          max_customers: number
+          plan: string
+          whatsapp: string
+        }[]
+      }
       get_dashboard_metrics: { Args: never; Returns: Json }
       get_expiration_timeline: {
         Args: never
