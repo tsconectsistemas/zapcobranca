@@ -21,6 +21,7 @@ export type Database = {
           id: string
           payload: Json | null
           payment_id: string | null
+          tenant_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -28,6 +29,7 @@ export type Database = {
           id?: string
           payload?: Json | null
           payment_id?: string | null
+          tenant_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -35,8 +37,17 @@ export type Database = {
           id?: string
           payload?: Json | null
           payment_id?: string | null
+          tenant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "asaas_webhooks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customers: {
         Row: {
@@ -665,7 +676,9 @@ export type Database = {
           whatsapp: string
         }[]
       }
-      handle_asaas_webhook: { Args: { _payload: Json }; Returns: Json }
+      handle_asaas_webhook:
+        | { Args: { _payload: Json }; Returns: Json }
+        | { Args: { _payload: Json; _tenant_id?: string }; Returns: Json }
       start_plan_checkout: {
         Args: { _billing_cycle: string; _plan_id: string }
         Returns: {

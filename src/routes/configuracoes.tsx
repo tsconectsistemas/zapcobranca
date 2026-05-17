@@ -169,6 +169,26 @@ function ConfiguracoesPage() {
 
   const webhookUrl = `${window.location.origin}/api/asaas-webhook`;
 
+  const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  const fetchWebhookLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from("asaas_webhooks")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      setWebhookLogs(data || []);
+    } catch (error) {
+      console.error("Erro ao carregar logs do webhook:", error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
   useEffect(() => {
     const sync = async () => {
       setLoading(true);
@@ -192,6 +212,8 @@ function ConfiguracoesPage() {
         setHasEvolutionKey(data.evolution.hasApiKey);
         setInstanceName(data.evolution.instanceName);
         setWhatsAppStatus(data.whatsapp.status);
+        
+        await fetchWebhookLogs();
       } catch (error) {
         console.error(error);
         toast.error("Erro ao carregar configurações");
