@@ -287,9 +287,11 @@ function ConfiguracoesPage() {
   const handleSaveAsaas = async () => {
     setSavingAsaas(true);
     try {
-      const args: any = { _asaas_environment: asaasEnvironment };
-      if (asaasApiKey.trim()) args._asaas_api_key = asaasApiKey.trim();
-      if (asaasWebhookToken.trim()) args._asaas_webhook_token = asaasWebhookToken.trim();
+      const args: any = { 
+        _asaas_environment: asaasEnvironment,
+        _asaas_api_key: asaasApiKey.trim() || null,
+        _asaas_webhook_token: asaasWebhookToken.trim() || null
+      };
       
       const { error } = await supabase.rpc("update_tenant_secrets", args);
       if (error) throw error;
@@ -298,7 +300,7 @@ function ConfiguracoesPage() {
       setAsaasApiKey("");
       toast.success("Configurações Asaas salvas!");
     } catch (error) {
-      console.error(error);
+      console.error("Erro ao salvar Asaas:", error);
       toast.error("Erro ao salvar configurações Asaas");
     } finally {
       setSavingAsaas(false);
