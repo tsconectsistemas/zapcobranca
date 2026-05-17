@@ -607,6 +607,19 @@ function ConfiguracoesPage() {
               </div>
 
               <div className="space-y-1.5">
+                <Label htmlFor="asaas-token">Token do Webhook Asaas (opcional)</Label>
+                <Input
+                  id="asaas-token"
+                  placeholder="Seu token de segurança"
+                  value={asaasWebhookToken}
+                  onChange={(e) => setAsaasWebhookToken(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Garante que apenas o Asaas possa enviar notificações para seu app.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label>URL do Webhook</Label>
                 <div className="flex gap-2">
                   <Input value={webhookUrl} readOnly className="font-mono text-xs" />
