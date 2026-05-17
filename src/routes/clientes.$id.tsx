@@ -60,6 +60,7 @@ interface CustomerRow {
   expiration_date: string | null;
   status: string | null;
   pix_emv_payload: string | null;
+  asaas_customer_id: string | null;
   notes: string | null;
   reseller_tag: string | null;
   payment_token: string | null;

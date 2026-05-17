@@ -60,6 +60,7 @@ interface CustomerListItem {
   plan: string | null;
   password_iptv: string | null;
   pix_emv_payload: string | null;
+  asaas_customer_id: string | null;
   notes: string | null;
 }
 
