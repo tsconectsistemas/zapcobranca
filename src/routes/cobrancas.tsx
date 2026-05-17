@@ -229,7 +229,12 @@ function CobrancasPage() {
   async function handleManualTrigger() {
     setRunning(true);
     try {
-      const r = await triggerNotificationsNow();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const r = await triggerNotificationsNow({
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
       if (!r.success) {
         toast.error(r.error || "Falha ao executar notificações");
       } else {
@@ -245,7 +250,13 @@ function CobrancasPage() {
 
   async function handleRetry(id: string) {
     try {
-      const res = await retryFn({ data: { id } });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const res = await retryFn({ 
+        data: { id },
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+      });
       if (res.success) {
         toast.success("Notificação reagendada!");
         await loadAll();
