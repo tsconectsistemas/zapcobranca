@@ -290,7 +290,7 @@ function PagarPage() {
         )}
 
         {/* Pix copia e cola */}
-        {pixPayload && (
+        {pixPayload && !isExpired && (
           <Card>
             <CardContent className="pt-5 pb-5 space-y-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
