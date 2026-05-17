@@ -44,7 +44,7 @@ function AdminDashboard() {
       try {
         const { data, error } = await supabase.rpc("get_admin_metrics");
         if (error) throw error;
-        setMetrics(data as AdminMetrics);
+        setMetrics(data as unknown as AdminMetrics);
       } catch (err) {
         console.error("Error fetching metrics:", err);
       } finally {
