@@ -13,6 +13,9 @@ const profileSchema = z.object({
   companyName: z.string().trim().min(2).max(120),
   whatsapp: z.string().trim().max(20),
   logoUrl: logoUrlSchema,
+  externalWebhookUrl: z.string().trim().url().optional().or(z.literal("")),
+  externalWebhookEnabled: z.boolean().optional(),
+  externalWebhookSecret: z.string().trim().max(100).optional().or(z.literal("")),
 });
 
 const notificationSettingsSchema = z.object({
