@@ -19,12 +19,14 @@ import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClientesIndexRouteImport } from './routes/clientes.index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as PagarTokenRouteImport } from './routes/pagar.$token'
 import { Route as ClientesImportarRouteImport } from './routes/clientes.importar'
 import { Route as ClientesCompletarRouteImport } from './routes/clientes.completar'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
 import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas-webhook'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as ApiPublicPlanWebhookRouteImport } from './routes/api.public.plan-webhook'
 import { Route as ApiPublicHooksNotifyExpiringRouteImport } from './routes/api.public.hooks.notify-expiring'
 
@@ -78,6 +80,11 @@ const ClientesIndexRoute = ClientesIndexRouteImport.update({
   path: '/clientes/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const PagarTokenRoute = PagarTokenRouteImport.update({
   id: '/pagar/$token',
   path: '/pagar/$token',
@@ -108,6 +115,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ApiPublicPlanWebhookRoute = ApiPublicPlanWebhookRouteImport.update({
   id: '/api/public/plan-webhook',
   path: '/api/public/plan-webhook',
@@ -130,19 +142,20 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/planos': typeof PlanosRoute
   '/whatsapp': typeof WhatsappRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/completar': typeof ClientesCompletarRoute
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
+  '/admin/': typeof AdminIndexRoute
   '/clientes/': typeof ClientesIndexRoute
   '/api/public/plan-webhook': typeof ApiPublicPlanWebhookRoute
   '/api/public/hooks/notify-expiring': typeof ApiPublicHooksNotifyExpiringRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/cadastro': typeof CadastroRoute
   '/cobrancas': typeof CobrancasRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -150,12 +163,14 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/planos': typeof PlanosRoute
   '/whatsapp': typeof WhatsappRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/completar': typeof ClientesCompletarRoute
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
+  '/admin': typeof AdminIndexRoute
   '/clientes': typeof ClientesIndexRoute
   '/api/public/plan-webhook': typeof ApiPublicPlanWebhookRoute
   '/api/public/hooks/notify-expiring': typeof ApiPublicHooksNotifyExpiringRoute
@@ -171,12 +186,14 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/planos': typeof PlanosRoute
   '/whatsapp': typeof WhatsappRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/asaas-webhook': typeof ApiAsaasWebhookRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/completar': typeof ClientesCompletarRoute
   '/clientes/importar': typeof ClientesImportarRoute
   '/pagar/$token': typeof PagarTokenRoute
+  '/admin/': typeof AdminIndexRoute
   '/clientes/': typeof ClientesIndexRoute
   '/api/public/plan-webhook': typeof ApiPublicPlanWebhookRoute
   '/api/public/hooks/notify-expiring': typeof ApiPublicHooksNotifyExpiringRoute
@@ -193,19 +210,20 @@ export interface FileRouteTypes {
     | '/login'
     | '/planos'
     | '/whatsapp'
+    | '/admin/dashboard'
     | '/admin/login'
     | '/api/asaas-webhook'
     | '/clientes/$id'
     | '/clientes/completar'
     | '/clientes/importar'
     | '/pagar/$token'
+    | '/admin/'
     | '/clientes/'
     | '/api/public/plan-webhook'
     | '/api/public/hooks/notify-expiring'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/cadastro'
     | '/cobrancas'
     | '/configuracoes'
@@ -213,12 +231,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/planos'
     | '/whatsapp'
+    | '/admin/dashboard'
     | '/admin/login'
     | '/api/asaas-webhook'
     | '/clientes/$id'
     | '/clientes/completar'
     | '/clientes/importar'
     | '/pagar/$token'
+    | '/admin'
     | '/clientes'
     | '/api/public/plan-webhook'
     | '/api/public/hooks/notify-expiring'
@@ -233,12 +253,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/planos'
     | '/whatsapp'
+    | '/admin/dashboard'
     | '/admin/login'
     | '/api/asaas-webhook'
     | '/clientes/$id'
     | '/clientes/completar'
     | '/clientes/importar'
     | '/pagar/$token'
+    | '/admin/'
     | '/clientes/'
     | '/api/public/plan-webhook'
     | '/api/public/hooks/notify-expiring'
@@ -336,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/pagar/$token': {
       id: '/pagar/$token'
       path: '/pagar/$token'
@@ -378,6 +407,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/api/public/plan-webhook': {
       id: '/api/public/plan-webhook'
       path: '/api/public/plan-webhook'
@@ -396,11 +432,15 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminDashboardRoute: typeof AdminDashboardRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminDashboardRoute: AdminDashboardRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
