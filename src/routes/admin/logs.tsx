@@ -57,7 +57,7 @@ function AdminLogs() {
       setLogs((data || []).map(log => ({
         ...log,
         admin_name: (log.admin_users as any)?.name || "Admin"
-      })));
+      })) as unknown as AdminLog[]);
     } catch (err) {
       console.error("Error fetching logs:", err);
     } finally {
