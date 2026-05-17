@@ -15,7 +15,8 @@ import {
   Shield,
   Upload,
   Globe,
-  MessageSquare
+  MessageSquare,
+  Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
