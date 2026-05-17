@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { extractPixKey, buildPixPayload } from "@/utils/pix";
+import { extractPixKey, inserirValorNoPix_TLV } from "@/utils/pix";
 
 export const Route = createFileRoute("/pagar/$token")({
   head: () => ({
