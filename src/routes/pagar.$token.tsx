@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { ChevronDown, Copy, Check, AlertCircle } from "lucide-react";
+import { ChevronDown, Copy, Check, AlertCircle, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
