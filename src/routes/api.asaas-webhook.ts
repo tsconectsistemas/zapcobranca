@@ -231,21 +231,6 @@ export const Route = createFileRoute("/api/asaas-webhook")({
 
           await sendWhatsAppConfirmation(matched, newExpirationDate, message);
 
-          // 5. Forward to external webhook if enabled
-          if (cfg?.external_webhook_enabled && cfg?.external_webhook_url) {
-            const forwardPayload = {
-              event: "payment.confirmed",
-              paymentId: payment?.id,
-              customerId: matched.id,
-              username: matched.username,
-              name: matched.name,
-              amount: payment?.value || matched.monthly_value,
-              paidAt: new Date().toISOString(),
-              newExpiration: newExpirationDate,
-              raw: payload
-            };
-            await forwardWebhook(cfg.external_webhook_url, forwardPayload, cfg.external_webhook_secret);
-          }
 
           return json(
             {

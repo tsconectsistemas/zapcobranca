@@ -115,9 +115,6 @@ function ConfiguracoesPage() {
   const [email, setEmail] = useState(tenant?.email ?? "");
   const [resellerWhatsApp, setResellerWhatsApp] = useState(maskWhatsApp(tenant?.whatsapp ?? ""));
   const [logoUrl, setLogoUrl] = useState(tenant?.logo_url ?? "");
-  const [externalWebhookUrl, setExternalWebhookUrl] = useState("");
-  const [externalWebhookEnabled, setExternalWebhookEnabled] = useState(false);
-  const [externalWebhookSecret, setExternalWebhookSecret] = useState("");
 
   const [asaasEnvironment, setAsaasEnvironment] = useState<AsaasEnvironment>("sandbox");
   const [asaasApiKey, setAsaasApiKey] = useState("");
@@ -186,9 +183,6 @@ function ConfiguracoesPage() {
         setEmail(data.tenant.email);
         setResellerWhatsApp(maskWhatsApp(data.tenant.whatsapp));
         setLogoUrl(data.tenant.logoUrl);
-        setExternalWebhookUrl(data.tenant.externalWebhookUrl || "");
-        setExternalWebhookEnabled(data.tenant.externalWebhookEnabled || false);
-        setExternalWebhookSecret(data.tenant.externalWebhookSecret || "");
         setNotificationSettings(data.tenant.notificationSettings);
         setAsaasEnvironment(data.asaas.environment);
         setHasAsaasKey(data.asaas.hasApiKey);
@@ -253,9 +247,6 @@ function ConfiguracoesPage() {
           companyName: companyName.trim(),
           whatsapp: unmaskDigits(resellerWhatsApp),
           logoUrl: logoUrl.trim(),
-          externalWebhookUrl: externalWebhookUrl.trim(),
-          externalWebhookEnabled: externalWebhookEnabled,
-          externalWebhookSecret: externalWebhookSecret.trim(),
         },
         headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
       });
