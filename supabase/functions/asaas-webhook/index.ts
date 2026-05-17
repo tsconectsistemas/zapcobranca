@@ -146,12 +146,15 @@ Deno.serve(async (req) => {
     }
 
     // 3. Process Payment via RPC
+    console.log("[asaas-webhook] Calling RPC handle_asaas_webhook...");
     const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc("handle_asaas_webhook", { 
       _payload: payload 
     });
 
     if (rpcError) {
       console.error("[asaas-webhook] RPC error:", rpcError);
+    } else {
+      console.log("[asaas-webhook] RPC Result:", rpcResult);
     }
 
     return new Response(JSON.stringify({ success: true, rpc_result: rpcResult }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
