@@ -6,7 +6,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 )
 
-const APP_URL = Deno.env.get('APP_URL') || 'https://zapcobranca.com.br'
+// APP_URL now from global_settings
 const CRON_SECRET = 'W8ysOgBnzx3MEcUgmegn1Vik4rtNohp'
 
 serve(async (req) => {
@@ -27,6 +27,22 @@ serve(async (req) => {
   }
 
   console.log('Starting notify-expiring function...', { targetTenantId })
+
+  // Read Global Settings
+  const { data: globalSettings } = await supabase
+    .from('global_settings')
+    .select('id, value')
+    .in('id', ['evolution_api_url', 'evolution_api_key', 'app_url'])
+
+  const settingsMap = Object.fromEntries((globalSettings || []).map((s: any) => [s.id, s.value]))
+  const evolutionUrl = settingsMap['evolution_api_url'] || ''
+  const evolutionKey = settingsMap['evolution_api_key'] || ''
+  const appUrl = settingsMap['app_url'] || 'https://zapcobranca.com.br'
+
+  if (!evolutionUrl || !evolutionKey) {
+    console.error('Evolution API not configured in global settings')
+    return new Response('Evolution API not configured', { status: 500 })
+  }
 
   const today = new Date()
   // Usar fuso horário do Brasil (Brasília) para garantir que a data de hoje bata com o banco
@@ -64,9 +80,6 @@ serve(async (req) => {
     .select(`
       id, company_name, whatsapp,
       notification_config,
-      tenant_secrets (
-        evolution_api_url, evolution_api_key
-      ),
       whatsapp_sessions (
         instance_name, status
       )
@@ -200,7 +213,8 @@ serve(async (req) => {
           target.type
         ] || getDefaultTemplate(target.type),
         customer,
-        tenant
+        tenant,
+        appUrl
       )
 
       const { error: queueError } = await supabase
@@ -243,10 +257,6 @@ async function processQueue() {
       *,
       tenants (
         whatsapp,
-        tenant_secrets (
-          evolution_api_url,
-          evolution_api_key
-        ),
         whatsapp_sessions ( instance_name, status )
       )
     `)
@@ -261,8 +271,7 @@ async function processQueue() {
       ? item.tenants[0] : item.tenants
     const session = Array.isArray(tenant?.whatsapp_sessions)
       ? tenant.whatsapp_sessions[0] : tenant?.whatsapp_sessions
-    const secrets = Array.isArray(tenant?.tenant_secrets)
-      ? tenant.tenant_secrets[0] : tenant?.tenant_secrets
+    // secrets removed - uses global evolutionUrl/Key
 
     const attempts = item.attempts + 1
 
@@ -288,12 +297,12 @@ async function processQueue() {
     try {
       // Send via Evolution API v2
       const response = await fetch(
-        `${secrets?.evolution_api_url}/message/sendText/${session.instance_name}`,
+        `${evolutionUrl}/message/sendText/${session.instance_name}`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': secrets?.evolution_api_key || '',
+            'apikey': evolutionKey,
           },
           body: JSON.stringify({
             number: item.whatsapp_number,
@@ -407,10 +416,9 @@ async function alertTenantFailure(
   tenant: any,
   error: string
 ) {
-  const secrets = Array.isArray(tenant?.tenant_secrets)
-    ? tenant.tenant_secrets[0] : tenant?.tenant_secrets
+  // secrets removed - uses global evolutionUrl/Key
 
-  if (!tenant?.whatsapp || !secrets?.evolution_api_url) return
+  if (!tenant?.whatsapp || !evolutionUrl) return
 
   const session = Array.isArray(tenant.whatsapp_sessions)
     ? tenant.whatsapp_sessions[0]
@@ -434,17 +442,17 @@ async function alertTenantFailure(
     `❌ Erro: ${error}\n\n` +
     `Tentativas: ${item.attempts} de ${item.max_attempts}\n\n` +
     `Verifique a conexão do WhatsApp em:\n` +
-    `${Deno.env.get('APP_URL') || 'https://zapcobranca.com.br'}/whatsapp`
+    `${appUrl}/whatsapp`
 
   const tenantNumber = formatNumber(tenant.whatsapp)
 
   await fetch(
-    `${secrets.evolution_api_url}/message/sendText/${session.instance_name}`,
+    `${evolutionUrl}/message/sendText/${session.instance_name}`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': secrets.evolution_api_key || '',
+        'apikey': evolutionKey,
       },
       body: JSON.stringify({
         number: tenantNumber,
@@ -483,9 +491,10 @@ async function alertTenantWhatsAppDisconnected(tenant: any) {
 function buildMessage(
   template: string,
   customer: any,
-  tenant: any
+  tenant: any,
+  appUrl: string
 ): string {
-  const paymentUrl = `${APP_URL}/pagar/${customer.payment_token}`
+  const paymentUrl = `${appUrl}/pagar/${customer.payment_token}`
   const valor = customer.monthly_value
     ? `R$ ${Number(customer.monthly_value)
         .toFixed(2)
