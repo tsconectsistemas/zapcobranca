@@ -38,7 +38,7 @@ import {
 } from "@/lib/settings.functions";
 import { maskWhatsApp, unmaskDigits } from "@/lib/masks";
 import { cn } from "@/lib/utils";
-import { saveEvolutionConfig } from "@/lib/evolution.functions";
+// saveEvolutionConfig removed
 import { testAsaasConnection } from "@/lib/asaas.functions";
 import {
   AlertCircle,
@@ -106,7 +106,7 @@ function ConfiguracoesPage() {
   const saveProfile = useServerFn(saveTenantProfile);
   const saveNotifications = useServerFn(saveNotificationPreferences);
   const saveNotifConfig = useServerFn(saveNotificationConfig);
-  const saveEvolution = useServerFn(saveEvolutionConfig);
+  // const saveEvolution = useServerFn(saveEvolutionConfig); // Removed as global now
   const deleteAccount = useServerFn(deleteMyAccount);
   const testAsaas = useServerFn(testAsaasConnection);
 
@@ -123,11 +123,7 @@ function ConfiguracoesPage() {
   const [hasAsaasKey, setHasAsaasKey] = useState(false);
   const [showAsaasKey, setShowAsaasKey] = useState(false);
 
-  const [evolutionApiUrl, setEvolutionApiUrl] = useState("");
-  const [evolutionApiKey, setEvolutionApiKey] = useState("");
-  const [hasEvolutionKey, setHasEvolutionKey] = useState(false);
-  const [showEvolutionKey, setShowEvolutionKey] = useState(false);
-  const [instanceName, setInstanceName] = useState("");
+  // Evolution fields removed - handled by admin globally
   const [whatsAppStatus, setWhatsAppStatus] = useState<"connected" | "disconnected" | string>("disconnected");
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -208,9 +204,7 @@ function ConfiguracoesPage() {
         setHasAsaasKey(data.asaas.hasApiKey);
         setAsaasWebhookToken(data.asaas.webhookToken);
         
-        setEvolutionApiUrl(data.evolution.apiUrl);
-        setHasEvolutionKey(data.evolution.hasApiKey);
-        setInstanceName(data.evolution.instanceName);
+        // Evolution config moved to global_settings (admin only)
         setWhatsAppStatus(data.whatsapp.status);
         
         await fetchWebhookLogs();
@@ -330,45 +324,7 @@ function ConfiguracoesPage() {
     }
   };
 
-  const handleSaveWhatsApp = async () => {
-    if (!evolutionApiUrl.trim() || (!evolutionApiKey.trim() && !hasEvolutionKey)) {
-      toast.error("Preencha a URL e a API Key da Evolution");
-      return;
-    }
-
-    setSavingWhatsApp(true);
-    try {
-      console.log("[Config] Saving Evolution Config...");
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const result = await saveEvolution({
-        data: {
-          apiUrl: evolutionApiUrl.trim(),
-          apiKey: evolutionApiKey.trim() || "",
-        },
-        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
-      });
-      console.log("[Config] Save Result:", result);
-      if (!result.success) throw new Error(result.error);
-
-      setHasEvolutionKey(true);
-      // setEvolutionApiKey(""); // Mantém o valor para referência visual
-      setInstanceName(result.instanceName);
-      toast.success("Configurações WhatsApp salvas!");
-      
-      // Se salvou com sucesso, tenta atualizar o status para refletir a nova configuração
-      await loadSettings({
-        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
-      });
-    } catch (error) {
-      console.error("[Config] Save Error:", error);
-      toast.error(error instanceof Error ? error.message : "Erro ao salvar WhatsApp");
-    } finally {
-      setSavingWhatsApp(false);
-    }
-  };
+  // handleSaveWhatsApp removed - admin only now
 
   const handleSaveNotifications = async () => {
     setSavingNotifications(true);
@@ -752,69 +708,8 @@ function ConfiguracoesPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>WhatsApp / Evolution API</CardTitle>
-              <CardDescription>Salve a conexão da API e acompanhe o estado da instância.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="space-y-1.5">
-                <Label htmlFor="evolution-url">URL da Evolution API</Label>
-                <Input
-                  id="evolution-url"
-                  value={evolutionApiUrl}
-                  onChange={(e) => setEvolutionApiUrl(e.target.value)}
-                  placeholder="https://sua-api.evolution.com"
-                />
-              </div>
+          {/* Evolution config removed from reseller - managed globally by admin */}
 
-              <div className="space-y-1.5">
-                <Label htmlFor="evolution-key">API Key Evolution</Label>
-                <div className="relative">
-                  <Input
-                    id="evolution-key"
-                    type={showEvolutionKey ? "text" : "password"}
-                    value={evolutionApiKey}
-                    onChange={(e) => setEvolutionApiKey(e.target.value)}
-                    placeholder="Cole sua API Key"
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowEvolutionKey((value) => !value)}
-                    className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground"
-                    aria-label={showEvolutionKey ? "Ocultar chave" : "Mostrar chave"}
-                  >
-                    {showEvolutionKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="instance-name">Nome da instância</Label>
-                <Input id="instance-name" value={instanceName} readOnly className="bg-muted text-muted-foreground" />
-              </div>
-
-              <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/50 px-3 py-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4 text-primary" />
-                  <span className={cn("font-medium", whatsAppStatus === "connected" ? "text-success" : "text-destructive")}>
-                    ● {whatsAppStatus === "connected" ? "WhatsApp conectado" : "WhatsApp desconectado"}
-                  </span>
-                </div>
-                <Link to="/whatsapp" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
-                  Gerenciar conexão <ExternalLink className="h-4 w-4" />
-                </Link>
-              </div>
-
-              <div className="flex justify-end">
-                <Button onClick={handleSaveWhatsApp} disabled={savingWhatsApp || loading}>
-                  {savingWhatsApp ? <Loader2 className="animate-spin" /> : null}
-                  Salvar configurações WhatsApp
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
 
           <Card className="xl:col-span-2">
             <CardHeader>
