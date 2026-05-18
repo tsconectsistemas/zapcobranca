@@ -352,7 +352,7 @@ function WhatsAppPage() {
           </Card>
         )}
 
-        <SendTestModal open={testOpen} onOpenChange={setTestOpen} onSend={async (number, text) => {
+        <SendTestModal open={testOpen} onOpenChange={setTestOpen} onSend={async (number: string, text: string) => {
           const { data: { session } } = await supabase.auth.getSession();
           const token = session?.access_token;
           const res = (await sendTestFn({ data: { number, text }, headers: token ? { 'Authorization': `Bearer ${token}` } : undefined })) as any;
@@ -364,9 +364,10 @@ function WhatsAppPage() {
           onOpenChange={setConfirmDisconnect}
           title="Desconectar WhatsApp?"
           description="Isso pausará todas as notificações automáticas enviadas por este número."
-          confirmText="Desconectar"
+          confirmLabel="Desconectar"
           onConfirm={handleDisconnect}
           loading={disconnecting}
+          variant="destructive"
         />
       </AppShell>
     </PrivateRoute>
