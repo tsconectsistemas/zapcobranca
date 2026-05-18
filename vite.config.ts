@@ -12,16 +12,7 @@ export default defineConfig({
         cache: false,
 
         output: {
-          manualChunks: (id) => {
-            if (id.includes('node_modules')) {
-              if (id.includes('react')) return 'vendor-react';
-              if (id.includes('@tanstack')) return 'vendor-tanstack';
-              if (id.includes('@radix-ui')) return 'vendor-ui';
-              if (id.includes('lucide')) return 'vendor-ui';
-              if (id.includes('@supabase')) return 'vendor-supabase';
-              return 'vendor-others';
-            }
-          }
+          manualChunks: undefined // Let Rollup decide to save memory during analysis
         }
       }
     }
