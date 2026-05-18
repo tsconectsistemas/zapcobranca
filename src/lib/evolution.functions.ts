@@ -70,6 +70,7 @@ export const getWhatsAppStatus = createServerFn({ method: "GET" })
     if (!r.ok) return { configured: false, connected: false, error: r.error };
     
     const global = await getGlobalEvolutionConfig();
+    console.log("[WhatsApp] Global Config:", global);
     const configured = !!(global.apiUrl && global.apiKey);
 
     const { data: session } = await supabaseAdmin
