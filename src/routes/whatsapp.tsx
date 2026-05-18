@@ -86,6 +86,9 @@ function WhatsAppPage() {
       const status = await fetchStatus({
         headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
       });
+      
+      console.log("[WhatsApp] Status response:", status);
+
       if (!status.configured) {
         setView({ kind: "not_configured" });
         return;
@@ -248,19 +251,24 @@ function WhatsAppPage() {
 
         {view.kind === "not_configured" && (
           <Card className="max-w-xl">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
-                  <AlertCircle className="h-5 w-5 text-orange-600" />
-                </div>
-                <CardTitle>WhatsApp não disponível</CardTitle>
+            <CardHeader className="flex flex-row items-center gap-3 space-y-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 shrink-0">
+                <AlertCircle className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Configuração Pendente</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                O administrador do sistema ainda não configurou a integração com WhatsApp. 
-                Entre em contato com o suporte para habilitar esta funcionalidade.
+                O administrador ainda não configurou as credenciais globais da Evolution API. 
               </p>
+              <div className="p-4 bg-muted rounded-lg border text-sm">
+                <p className="font-medium mb-1">Dica para o Administrador:</p>
+                <p className="text-muted-foreground">
+                  Acesse <span className="font-semibold">Configurações do Sistema</span> no painel administrativo e preencha a URL e a API Key da Evolution API.
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}
