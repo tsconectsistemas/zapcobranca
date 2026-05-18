@@ -200,6 +200,38 @@ export type Database = {
           },
         ]
       }
+      global_settings: {
+        Row: {
+          description: string | null
+          id: string
+          updated_at: string | null
+          updated_by: string | null
+          value: string | null
+        }
+        Insert: {
+          description?: string | null
+          id: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "global_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       landing_content: {
         Row: {
           content: Json
@@ -597,6 +629,8 @@ export type Database = {
       tenants: {
         Row: {
           active: boolean | null
+          asaas_api_key: string | null
+          asaas_environment: string | null
           company_name: string
           created_at: string | null
           email: string
@@ -617,6 +651,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          asaas_api_key?: string | null
+          asaas_environment?: string | null
           company_name: string
           created_at?: string | null
           email: string
@@ -637,6 +673,8 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          asaas_api_key?: string | null
+          asaas_environment?: string | null
           company_name?: string
           created_at?: string | null
           email?: string
@@ -854,6 +892,7 @@ export type Database = {
           expiration_date: string
         }[]
       }
+      get_global_setting: { Args: { setting_key: string }; Returns: string }
       get_my_plan_status: {
         Args: never
         Returns: {
