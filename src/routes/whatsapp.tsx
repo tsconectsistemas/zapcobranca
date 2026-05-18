@@ -27,12 +27,12 @@ import {
 } from "@/components/ui/dialog";
 import {
   connectWhatsApp,
-  debugFetchInstances,
+  // debugFetchInstances removed
   disconnectWhatsApp,
   getWhatsAppStatus,
   pollConnectionState,
   refreshQRCode,
-  saveEvolutionConfig,
+  // saveEvolutionConfig removed
   sendTestMessage,
 } from "@/lib/evolution.functions";
 import { unmaskDigits } from "@/lib/masks";
