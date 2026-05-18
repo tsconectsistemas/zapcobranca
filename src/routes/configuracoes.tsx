@@ -106,7 +106,7 @@ function ConfiguracoesPage() {
   const saveProfile = useServerFn(saveTenantProfile);
   const saveNotifications = useServerFn(saveNotificationPreferences);
   const saveNotifConfig = useServerFn(saveNotificationConfig);
-  const saveEvolution = useServerFn(saveEvolutionConfig);
+  // const saveEvolution = useServerFn(saveEvolutionConfig); // Removed as global now
   const deleteAccount = useServerFn(deleteMyAccount);
   const testAsaas = useServerFn(testAsaasConnection);
 
@@ -123,11 +123,7 @@ function ConfiguracoesPage() {
   const [hasAsaasKey, setHasAsaasKey] = useState(false);
   const [showAsaasKey, setShowAsaasKey] = useState(false);
 
-  const [evolutionApiUrl, setEvolutionApiUrl] = useState("");
-  const [evolutionApiKey, setEvolutionApiKey] = useState("");
-  const [hasEvolutionKey, setHasEvolutionKey] = useState(false);
-  const [showEvolutionKey, setShowEvolutionKey] = useState(false);
-  const [instanceName, setInstanceName] = useState("");
+  // Evolution fields removed - handled by admin globally
   const [whatsAppStatus, setWhatsAppStatus] = useState<"connected" | "disconnected" | string>("disconnected");
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -208,9 +204,7 @@ function ConfiguracoesPage() {
         setHasAsaasKey(data.asaas.hasApiKey);
         setAsaasWebhookToken(data.asaas.webhookToken);
         
-        setEvolutionApiUrl(data.evolution.apiUrl);
-        setHasEvolutionKey(data.evolution.hasApiKey);
-        setInstanceName(data.evolution.instanceName);
+        // Evolution config moved to global_settings (admin only)
         setWhatsAppStatus(data.whatsapp.status);
         
         await fetchWebhookLogs();
@@ -330,45 +324,7 @@ function ConfiguracoesPage() {
     }
   };
 
-  const handleSaveWhatsApp = async () => {
-    if (!evolutionApiUrl.trim() || (!evolutionApiKey.trim() && !hasEvolutionKey)) {
-      toast.error("Preencha a URL e a API Key da Evolution");
-      return;
-    }
-
-    setSavingWhatsApp(true);
-    try {
-      console.log("[Config] Saving Evolution Config...");
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const result = await saveEvolution({
-        data: {
-          apiUrl: evolutionApiUrl.trim(),
-          apiKey: evolutionApiKey.trim() || "",
-        },
-        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
-      });
-      console.log("[Config] Save Result:", result);
-      if (!result.success) throw new Error(result.error);
-
-      setHasEvolutionKey(true);
-      // setEvolutionApiKey(""); // Mantém o valor para referência visual
-      setInstanceName(result.instanceName);
-      toast.success("Configurações WhatsApp salvas!");
-      
-      // Se salvou com sucesso, tenta atualizar o status para refletir a nova configuração
-      await loadSettings({
-        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
-      });
-    } catch (error) {
-      console.error("[Config] Save Error:", error);
-      toast.error(error instanceof Error ? error.message : "Erro ao salvar WhatsApp");
-    } finally {
-      setSavingWhatsApp(false);
-    }
-  };
+  // handleSaveWhatsApp removed - admin only now
 
   const handleSaveNotifications = async () => {
     setSavingNotifications(true);
