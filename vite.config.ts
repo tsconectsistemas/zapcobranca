@@ -3,15 +3,16 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 export default defineConfig({
   vite: {
     build: {
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 2000,
+      minify: 'esbuild', // Esbuild is faster and uses less memory than Terser
+      cssCodeSplit: true,
+      sourcemap: false,
       rollupOptions: {
+        maxParallelFileOps: 1, // Minimize memory usage
+        cache: false,
+
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-tanstack': ['@tanstack/react-query', '@tanstack/react-router'],
-            'vendor-ui': ['lucide-react', 'framer-motion'],
-            'vendor-supabase': ['@supabase/supabase-js'],
-          }
+          manualChunks: undefined // Let Rollup decide to save memory during analysis
         }
       }
     }
