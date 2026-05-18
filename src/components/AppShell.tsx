@@ -65,14 +65,14 @@ export function AppShell({ title, children }: AppShellProps) {
 
   useEffect(() => {
     if (!tenant) return;
-    let cancelled = false;
-    (async () => {
+    
+    const updateStatus = async () => {
       const { data } = await supabase
         .from("whatsapp_sessions")
         .select("status, instance_name")
         .eq("tenant_id", tenant.id)
         .maybeSingle();
-      if (cancelled) return;
+      
       if (!data || !data.instance_name) {
         setWaDot("none");
       } else if (data.status === "connected") {
@@ -80,10 +80,12 @@ export function AppShell({ title, children }: AppShellProps) {
       } else {
         setWaDot("disconnected");
       }
-    })();
-    return () => {
-      cancelled = true;
     };
+
+    updateStatus();
+    const interval = setInterval(updateStatus, 30000); // Check every 30s
+    
+    return () => clearInterval(interval);
   }, [tenant]);
 
   const planLabel =
