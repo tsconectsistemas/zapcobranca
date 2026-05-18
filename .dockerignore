@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+.lovable
+.tanstack
+.workspace
+bun.lockb
+package-lock.json
+*.log
