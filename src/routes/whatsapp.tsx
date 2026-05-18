@@ -64,7 +64,7 @@ function WhatsAppPage() {
   const [view, setView] = useState<ViewState>({ kind: "loading" });
 
   const fetchStatus = useServerFn(getWhatsAppStatus);
-  const saveConfig = useServerFn(saveEvolutionConfig);
+  // const saveConfig = useServerFn(saveEvolutionConfig); // Removed as handled globally now
   const connectFn = useServerFn(connectWhatsApp);
   const refreshFn = useServerFn(refreshQRCode);
   const pollFn = useServerFn(pollConnectionState);
@@ -271,8 +271,8 @@ function WhatsAppPage() {
       setView({
         kind: "qr",
         instanceName: res.instanceName!,
-        qrBase64: res.qrBase64,
-        qrCode: res.qrCode,
+        qrBase64: res.qrBase64 ?? null,
+        qrCode: res.qrCode ?? null,
       });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao conectar");
@@ -292,7 +292,7 @@ function WhatsAppPage() {
       if (res.success) {
         setView((v) =>
           v.kind === "qr"
-            ? { ...v, qrBase64: res.qrBase64, qrCode: res.qrCode }
+            ? { ...v, qrBase64: res.qrBase64 ?? null, qrCode: res.qrCode ?? null }
             : v,
         );
         toast.success("QR Code atualizado");
@@ -623,31 +623,10 @@ function SendTestModal({
   );
 }
 
+// DebugPanel removed (uses debugFetchInstances)
 function DebugPanel() {
-  const debugFn = useServerFn(debugFetchInstances);
-  const sendFn = useServerFn(sendTestMessage);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<string>("");
-  const [testNumber, setTestNumber] = useState("");
-
-  const runFetch = async () => {
-    setLoading(true);
-    try {
-      const res = (await debugFn()) as {
-        success: boolean;
-        error?: string;
-        raw?: string;
-        apiUrl?: string;
-        instanceName?: string;
-      };
-      setResult(JSON.stringify(res, null, 2));
-    } catch (err) {
-      setResult(String(err));
-    } finally {
-      setLoading(false);
-    }
-  };
+  return null;
+}
 
   const runSend = async () => {
     const digits = unmaskDigits(testNumber);
