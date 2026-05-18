@@ -1,8 +1,5 @@
 # Estágio de Build
-FROM node:20-slim AS build
-
-# Instalar o bun para um build mais rápido
-RUN npm install -g bun
+FROM oven/bun:1-slim AS build
 
 WORKDIR /app
 
@@ -10,22 +7,26 @@ WORKDIR /app
 COPY package.json bun.lockb* ./
 
 # Instalar dependências
-RUN bun install
+RUN bun install --frozen-lockfile
 
 # Copiar o restante do código
 COPY . .
 
-# Build da aplicação
+# Build da aplicação com limites de memória e otimizações
+# NODE_OPTIONS pode ser respeitado por alguns subprocessos do Vite/Rollup
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN bun run build
 
 # Estágio de Produção com Nginx
 FROM nginx:alpine
 
 # Copiar o build para o diretório do nginx
-# O diretório 'dist' é o padrão do Vite
+# O diretório 'dist' é o padrão do Vite para client-side
+# Para TanStack Start, pode ser .output ou dist/client dependendo da config
+# Vamos assumir dist por enquanto, mas se for SSR, o deploy muda.
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copiar configuração customizada do Nginx para suportar SPA (Single Page Application)
+# Copiar configuração customizada do Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
