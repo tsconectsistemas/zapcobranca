@@ -38,7 +38,7 @@ import {
 } from "@/lib/settings.functions";
 import { maskWhatsApp, unmaskDigits } from "@/lib/masks";
 import { cn } from "@/lib/utils";
-import { saveEvolutionConfig } from "@/lib/evolution.functions";
+// saveEvolutionConfig removed
 import { testAsaasConnection } from "@/lib/asaas.functions";
 import {
   AlertCircle,
