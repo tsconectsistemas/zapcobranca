@@ -192,12 +192,24 @@ export const disconnectWhatsApp = createServerFn({ method: "POST" })
     if (!r.ok) return { success: false, error: r.error };
     
     const global = await getGlobalEvolutionConfig();
-    await logoutInstance(global.apiUrl, global.apiKey, r.cfg.instanceName);
-    await deleteInstance(global.apiUrl, global.apiKey, r.cfg.instanceName);
+    
+    // Attempt to remove from Evolution API, but don't block on errors (e.g. instance already gone)
+    try {
+      await logoutInstance(global.apiUrl, global.apiKey, r.cfg.instanceName);
+      await deleteInstance(global.apiUrl, global.apiKey, r.cfg.instanceName);
+    } catch (e) {
+      console.warn("[WhatsApp] Disconnect error (Evolution API):", e);
+    }
 
+    // Always clear the local session state
     await supabaseAdmin
       .from("whatsapp_sessions")
-      .update({ status: "disconnected", connected_at: null })
+      .update({ 
+        status: "disconnected", 
+        connected_at: null,
+        qr_code: null,
+        updated_at: new Date().toISOString()
+      })
       .eq("tenant_id", r.cfg.tenantId);
 
     return { success: true };

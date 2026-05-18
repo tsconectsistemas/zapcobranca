@@ -279,7 +279,14 @@ function WhatsAppPage() {
                 disabled={connecting}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white w-full"
               >
-                {connecting ? "Gerando QR Code..." : "Conectar WhatsApp"}
+                {connecting ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Gerando QR Code...
+                  </>
+                ) : (
+                  "Conectar WhatsApp"
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -314,12 +321,21 @@ function WhatsAppPage() {
               <p className="text-center text-xs text-muted-foreground">
                 QR Code expira em: <span className="font-semibold tabular-nums text-foreground">{qrCountdown}s</span>
               </p>
-              <div className="flex justify-center gap-2">
-                <Button variant="outline" onClick={handleManualRefresh}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Atualizar QR Code
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-center gap-2">
+                  <Button variant="outline" onClick={handleManualRefresh} disabled={qrCountdown < 5}>
+                    <RefreshCw className={cn("mr-2 h-4 w-4", qrCountdown < 5 && "animate-spin")} />
+                    Atualizar QR Code
+                  </Button>
+                  <Button variant="ghost" onClick={() => loadStatus()}>Voltar</Button>
+                </div>
+                <Button 
+                  variant="link" 
+                  className="text-xs text-muted-foreground hover:text-red-600"
+                  onClick={() => setConfirmDisconnect(true)}
+                >
+                  Cancelar e excluir instância
                 </Button>
-                <Button variant="ghost" onClick={() => loadStatus()}>Cancelar</Button>
               </div>
             </CardContent>
           </Card>
