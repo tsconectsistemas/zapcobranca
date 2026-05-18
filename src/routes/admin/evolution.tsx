@@ -337,14 +337,14 @@ function HealthItem({ label, value, color = "text-white" }: any) {
   );
 }
 
-function StatusBadge({ status }: { status: InstanceRow['status'] }) {
+function StatusBadge({ status }: { status: "open" | "connecting" | "close" | "not_configured" }) {
   const map = {
     open: { label: "Conectado", cls: "bg-[#1D9E75]/10 text-[#1D9E75] border-[#1D9E75]/20" },
     connecting: { label: "Conectando", cls: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" },
     close: { label: "Desconectado", cls: "bg-red-500/10 text-red-500 border-red-500/20" },
     not_configured: { label: "Não config.", cls: "bg-gray-500/10 text-gray-500 border-gray-500/20" }
   };
-  const cfg = map[status];
+  const cfg = map[status] || map.not_configured;
   return (
     <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase border", cfg.cls)}>
       {cfg.label}
