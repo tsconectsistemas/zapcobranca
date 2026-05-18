@@ -118,9 +118,28 @@ export const connectWhatsApp = createServerFn({ method: "POST" })
     const global = await getGlobalEvolutionConfig();
     if (!global.apiUrl || !global.apiKey) return { success: false, error: "Sistema não configurado pelo admin", missing: true };
 
-    await createInstance(global.apiUrl, global.apiKey, r.cfg.instanceName);
+    // Try to create instance. If it already exists, Evolution will return 400/403,
+    // but we can still try to get the QR code from the existing instance.
+    try {
+      const createRes = await createInstance(global.apiUrl, global.apiKey, r.cfg.instanceName);
+      if (!createRes.success && !createRes.error?.includes("already exists")) {
+        // If it's a real error (not just "already exists"), we might want to know, 
+        // but often we just want to proceed to getQRCode if the instance is there.
+        console.warn("[WhatsApp] Create instance warning:", createRes.error);
+      }
+    } catch (e) {
+      console.error("[WhatsApp] Create instance error:", e);
+    }
+
     const qr = await getQRCode(global.apiUrl, global.apiKey, r.cfg.instanceName);
-    if (!qr.success) return { success: false, error: qr.error };
+    if (!qr.success) {
+      return { 
+        success: false, 
+        error: qr.error?.includes("not found") 
+          ? "Não foi possível encontrar ou criar a instância. Tente novamente." 
+          : qr.error 
+      };
+    }
 
     await supabaseAdmin.from("whatsapp_sessions").upsert(
       {
