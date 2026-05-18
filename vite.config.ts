@@ -8,8 +8,9 @@ export default defineConfig({
       cssCodeSplit: true,
       sourcemap: false,
       rollupOptions: {
-        maxParallelFileOps: 2, // Limit parallel file operations to save memory
-        cache: false, // Disable cache to save memory
+        maxParallelFileOps: 1, // Minimize memory usage
+        cache: false,
+
         output: {
           manualChunks: (id) => {
             if (id.includes('node_modules')) {
