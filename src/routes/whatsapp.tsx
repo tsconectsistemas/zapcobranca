@@ -86,6 +86,9 @@ function WhatsAppPage() {
       const status = await fetchStatus({
         headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
       });
+      
+      console.log("[WhatsApp] Status response:", status);
+
       if (!status.configured) {
         setView({ kind: "not_configured" });
         return;
