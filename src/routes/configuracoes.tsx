@@ -708,69 +708,8 @@ function ConfiguracoesPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>WhatsApp / Evolution API</CardTitle>
-              <CardDescription>Salve a conexão da API e acompanhe o estado da instância.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="space-y-1.5">
-                <Label htmlFor="evolution-url">URL da Evolution API</Label>
-                <Input
-                  id="evolution-url"
-                  value={evolutionApiUrl}
-                  onChange={(e) => setEvolutionApiUrl(e.target.value)}
-                  placeholder="https://sua-api.evolution.com"
-                />
-              </div>
+          {/* Evolution config removed from reseller - managed globally by admin */}
 
-              <div className="space-y-1.5">
-                <Label htmlFor="evolution-key">API Key Evolution</Label>
-                <div className="relative">
-                  <Input
-                    id="evolution-key"
-                    type={showEvolutionKey ? "text" : "password"}
-                    value={evolutionApiKey}
-                    onChange={(e) => setEvolutionApiKey(e.target.value)}
-                    placeholder="Cole sua API Key"
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowEvolutionKey((value) => !value)}
-                    className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground"
-                    aria-label={showEvolutionKey ? "Ocultar chave" : "Mostrar chave"}
-                  >
-                    {showEvolutionKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="instance-name">Nome da instância</Label>
-                <Input id="instance-name" value={instanceName} readOnly className="bg-muted text-muted-foreground" />
-              </div>
-
-              <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/50 px-3 py-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4 text-primary" />
-                  <span className={cn("font-medium", whatsAppStatus === "connected" ? "text-success" : "text-destructive")}>
-                    ● {whatsAppStatus === "connected" ? "WhatsApp conectado" : "WhatsApp desconectado"}
-                  </span>
-                </div>
-                <Link to="/whatsapp" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
-                  Gerenciar conexão <ExternalLink className="h-4 w-4" />
-                </Link>
-              </div>
-
-              <div className="flex justify-end">
-                <Button onClick={handleSaveWhatsApp} disabled={savingWhatsApp || loading}>
-                  {savingWhatsApp ? <Loader2 className="animate-spin" /> : null}
-                  Salvar configurações WhatsApp
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
 
           <Card className="xl:col-span-2">
             <CardHeader>
