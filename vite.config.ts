@@ -1,12 +1,6 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
-  // Use node-server preset for general hosting (Docker/VPS)
-  // This produces a server that can be run with Node or Bun
-  // The output will be in .output/server/index.mjs
-  nitro: {
-    preset: "node-server",
-  },
   vite: {
     build: {
       chunkSizeWarningLimit: 2000,
@@ -20,6 +14,10 @@ export default defineConfig({
           manualChunks: undefined
         }
       }
+    },
+    preview: {
+      port: 3000,
+      host: true
     }
   }
 });
