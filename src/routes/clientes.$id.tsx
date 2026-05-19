@@ -404,7 +404,7 @@ ${customer.pix_emv_payload ? `Ou copie o código PIX abaixo:\n${customer.pix_emv
               open={renewalOpen}
               onOpenChange={setRenewalOpen}
               customer={customer}
-              onDone={load}
+              onDone={fetchAll}
             />
             <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
               <Pencil className="mr-2 h-4 w-4" />
