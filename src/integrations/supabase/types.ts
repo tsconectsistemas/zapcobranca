@@ -987,7 +987,7 @@ export type Database = {
         }[]
       }
       handle_asaas_webhook: {
-        Args: { _payload: Json; _tenant_id?: string }
+        Args: { _payload: Json; _tenant_id: string }
         Returns: Json
       }
       is_admin: { Args: never; Returns: boolean }
