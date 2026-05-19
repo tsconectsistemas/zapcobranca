@@ -120,21 +120,32 @@ Deno.serve(async (req) => {
       }
     }
 
-    // C) Try by PIX Key
-    if (!tenantId && pixKey) {
+    // C) Try by PIX Key / Payload match
+    if (!tenantId && (pixKey || payment?.pixQrCodeId)) {
       const { data: customers } = await supabaseAdmin
         .from("customers")
         .select("id, tenant_id, pix_emv_payload")
         .not("pix_emv_payload", "is", null);
 
       const matched = customers?.find(c => {
-        const extracted = extractPixKey(c.pix_emv_payload || "");
-        return extracted === pixKey || (c.pix_emv_payload && c.pix_emv_payload.includes(pixKey));
+        const payload = c.pix_emv_payload || "";
+        const extracted = extractPixKey(payload);
+        
+        // Match by extracted key
+        if (pixKey && extracted === pixKey) return true;
+        
+        // Match by full payload inclusion (e.g. contains the specific TxID/QR ID)
+        if (pixKey && payload.includes(pixKey)) return true;
+        
+        // Match by specific QR Code ID from Asaas (e.g. TSCONECT00000566088502ASA)
+        if (payment?.pixQrCodeId && payload.includes(payment.pixQrCodeId)) return true;
+
+        return false;
       });
 
       if (matched) {
         tenantId = matched.tenant_id;
-        console.log(`[asaas-webhook] Found tenant by Pix Key match: ${tenantId}`);
+        console.log(`[asaas-webhook] Found tenant by Pix/Payload match: ${tenantId}`);
       }
     }
 
