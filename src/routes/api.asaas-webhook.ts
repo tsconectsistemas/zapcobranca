@@ -112,7 +112,7 @@ export const Route = createFileRoute("/api/asaas-webhook")({
 
         if (!tenantId) {
           console.log("[asaas-webhook] No matching customer/tenant found for pixKey:", pixKey);
-          await supabaseAdmin.rpc("handle_asaas_webhook", { _payload: payload });
+          await supabaseAdmin.rpc("handle_asaas_webhook", { _payload: payload, _tenant_id: tenantId });
           return json({ matched: false, reason: "not_found" }, 200);
         }
 
@@ -133,7 +133,7 @@ export const Route = createFileRoute("/api/asaas-webhook")({
         }
 
         // 3. Process Payment (Database RPC)
-        await supabaseAdmin.rpc("handle_asaas_webhook", { _payload: payload });
+        await supabaseAdmin.rpc("handle_asaas_webhook", { _payload: payload, _tenant_id: tenantId });
 
         if (!event || !PAYMENT_CONFIRMED_EVENTS.has(event)) {
           return json({ ignored: true, event: event ?? null }, 200);
