@@ -400,6 +400,12 @@ ${customer.pix_emv_payload ? `Ou copie o código PIX abaixo:\n${customer.pix_emv
               <RefreshCw className="mr-2 h-4 w-4" />
               Renovar Manual
             </Button>
+            <ManualRenewalModal
+              open={renewalOpen}
+              onOpenChange={setRenewalOpen}
+              customer={customer}
+              onDone={load}
+            />
             <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
               <Pencil className="mr-2 h-4 w-4" />
               Editar

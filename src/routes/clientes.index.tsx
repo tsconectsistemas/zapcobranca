@@ -52,6 +52,7 @@ export const Route = createFileRoute("/clientes/")({
 
 interface CustomerListItem {
   id: string;
+  tenant_id: string;
   username: string;
   name: string | null;
   whatsapp: string | null;
