@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { addMonths, addDays, format, parseISO } from "date-fns";
+import { addMonths, format, parseISO } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,8 @@ interface ManualRenewalModalProps {
     username: string;
     expiration_date: string | null;
     monthly_value: number | null;
+    whatsapp: string | null;
+    tenant_id: string;
   } | null;
   onDone: () => void;
 }
@@ -55,12 +57,10 @@ export function ManualRenewalModal({
         ? parseISO(customer.expiration_date)
         : new Date();
       
-      // If already expired, start from today
       const baseDate = currentExp < new Date() ? new Date() : currentExp;
       const newExp = addMonths(baseDate, parseInt(months));
       const newExpStr = format(newExp, "yyyy-MM-dd");
 
-      // 1. Update customer
       const { error: custErr } = await supabase
         .from("customers")
         .update({
@@ -71,8 +71,7 @@ export function ManualRenewalModal({
 
       if (custErr) throw custErr;
 
-      // 2. Register payment
-      const { error: payErr } = await supabase.from("payments").insert({
+      await supabase.from("payments").insert({
         tenant_id: tenant.id,
         customer_id: customer.id,
         amount: (customer.monthly_value || 0) * parseInt(months),
@@ -82,13 +81,21 @@ export function ManualRenewalModal({
         raw_webhook: { manual: true, reason: "Manual renewal by owner" },
       });
 
-      if (payErr) {
-        console.error("Error registering payment record:", payErr);
-        // We don't throw here because the customer was already updated successfully
-        // but it's good to know.
+      // Send WhatsApp notification for manual renewal
+      const expFmt = format(newExp, "dd/MM/yyyy");
+      const message = `✅ *Sua assinatura foi renovada!*\n\nOlá, ${customer.name || customer.username}!\nSua assinatura foi renovada manualmente e agora vence em: *${expFmt}*.\n\nObrigado pela preferência! 🚀`;
+
+      if (customer.whatsapp) {
+        await supabase.from("notification_queue").insert({
+          tenant_id: tenant.id,
+          customer_id: customer.id,
+          type: "manual_renewal",
+          message,
+          whatsapp_number: customer.whatsapp,
+        });
       }
 
-      toast.success(`Cliente renovado até ${format(newExp, "dd/MM/yyyy")}`);
+      toast.success(`Cliente renovado até ${expFmt}`);
       onDone();
       onOpenChange(false);
     } catch (error) {
