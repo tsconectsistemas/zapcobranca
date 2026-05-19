@@ -112,7 +112,7 @@ export const Route = createFileRoute("/api/asaas-webhook")({
 
         if (!tenantId) {
           console.log("[asaas-webhook] No matching customer/tenant found for pixKey:", pixKey);
-          await supabaseAdmin.rpc("handle_asaas_webhook", { _payload: payload, _tenant_id: tenantId });
+          await supabaseAdmin.rpc("handle_asaas_webhook", { _payload: payload, _tenant_id: tenantId || "00000000-0000-0000-0000-000000000000" });
           return json({ matched: false, reason: "not_found" }, 200);
         }
 
