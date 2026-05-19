@@ -17,9 +17,8 @@ COPY . .
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN bun run build
 
-# Expor a porta 3000 (comum em serviços de hospedagem como Railway)
-EXPOSE 3000
+# Expor a porta 80 para o Dokploy
+EXPOSE 80
 
-# Usamos o 'vite preview' para servir a aplicação de forma simples, 
-# pois ele gerencia automaticamente o roteamento do build do Vite.
-CMD ["bun", "x", "vite", "preview", "--port", "3000", "--host"]
+# Usamos o 'vite preview' para servir a aplicação na porta 80
+CMD ["bun", "x", "vite", "preview", "--port", "80", "--host"]
