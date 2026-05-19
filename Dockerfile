@@ -1,34 +1,25 @@
-# Estágio de Build
-FROM oven/bun:1-slim AS build
+# Estágio de Build e Execução
+FROM oven/bun:1-slim
 
 WORKDIR /app
 
 # Copiar arquivos de dependência
 COPY package.json bun.lockb* ./
 
-# Instalar dependências
-RUN bun install --frozen-lockfile
+# Instalar dependências (incluindo devDependencies para o build e preview)
+RUN bun install
 
 # Copiar o restante do código
 COPY . .
 
-# Build da aplicação com limites de memória e otimizações
-# NODE_OPTIONS pode ser respeitado por alguns subprocessos do Vite/Rollup
+# Realizar o build da aplicação
+# O TanStack Start gera a saída em dist/client e dist/server
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN bun run build
 
-# Estágio de Produção com Nginx
-FROM nginx:alpine
+# Expor a porta 3000 (comum em serviços de hospedagem como Railway)
+EXPOSE 3000
 
-# Copiar o build para o diretório do nginx
-# O diretório 'dist' é o padrão do Vite para client-side
-# Para TanStack Start, pode ser .output ou dist/client dependendo da config
-# Vamos assumir dist por enquanto, mas se for SSR, o deploy muda.
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copiar configuração customizada do Nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+# Usamos o 'vite preview' para servir a aplicação de forma simples, 
+# pois ele gerencia automaticamente o roteamento do build do Vite.
+CMD ["bun", "x", "vite", "preview", "--port", "3000", "--host"]

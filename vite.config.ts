@@ -4,17 +4,20 @@ export default defineConfig({
   vite: {
     build: {
       chunkSizeWarningLimit: 2000,
-      minify: 'esbuild', // Esbuild is faster and uses less memory than Terser
+      minify: 'esbuild',
       cssCodeSplit: true,
       sourcemap: false,
       rollupOptions: {
-        maxParallelFileOps: 1, // Minimize memory usage
+        maxParallelFileOps: 1,
         cache: false,
-
         output: {
-          manualChunks: undefined // Let Rollup decide to save memory during analysis
+          manualChunks: undefined
         }
       }
+    },
+    preview: {
+      port: 3000,
+      host: true
     }
   }
 });
