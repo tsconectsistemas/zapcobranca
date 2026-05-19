@@ -12,6 +12,12 @@ RUN bun install
 # Copiar o restante do código
 COPY . .
 
+# Variáveis do Supabase (Buscadas do projeto Lovable)
+ENV VITE_SUPABASE_URL="https://dxxbqeqdwagmtynfsmzw.supabase.co"
+ENV VITE_SUPABASE_PUBLISHABLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4eGJxZXFkd2FnbXR5bmZzbXp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NDk4ODEsImV4cCI6MjA5MjEyNTg4MX0.PfT6gfYXtAnz9ipc_p24pdIojlLVsJkDkeNAo_m0sUc"
+ENV SUPABASE_URL="https://dxxbqeqdwagmtynfsmzw.supabase.co"
+ENV SUPABASE_PUBLISHABLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4eGJxZXFkd2FnbXR5bmZzbXp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NDk4ODEsImV4cCI6MjA5MjEyNTg4MX0.PfT6gfYXtAnz9ipc_p24pdIojlLVsJkDkeNAo_m0sUc"
+
 # Variáveis de ambiente para o build e runtime
 ENV NODE_ENV=production
 ENV NITRO_PRESET=bun
