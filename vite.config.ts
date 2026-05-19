@@ -7,22 +7,10 @@ export default defineConfig({
       minify: 'esbuild',
       cssCodeSplit: true,
       sourcemap: false,
-      rollupOptions: {
-        maxParallelFileOps: 1,
-        cache: false,
-        output: {
-          manualChunks: undefined
-        }
-      }
     },
-    preview: {
-      port: 80,
-      host: true
-    },
-    // Garante que o build possa ser servido corretamente
+    // As configurações de server/preview aqui são para desenvolvimento local
     server: {
-      port: 80,
-      host: true
-    }
+      host: true,
+    },
   }
 });
