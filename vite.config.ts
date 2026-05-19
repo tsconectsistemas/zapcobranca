@@ -18,6 +18,11 @@ export default defineConfig({
     preview: {
       port: 80,
       host: true
+    },
+    // Garante que o build possa ser servido corretamente
+    server: {
+      port: 80,
+      host: true
     }
   }
 });

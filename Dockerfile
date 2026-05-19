@@ -12,13 +12,14 @@ RUN bun install
 # Copiar o restante do código
 COPY . .
 
-# Realizar o build da aplicação
-# O TanStack Start gera a saída em dist/client e dist/server
+# Realizar o build da aplicação para o ambiente de servidor (Bun)
+ENV NITRO_PRESET=bun
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN bun run build
 
 # Expor a porta 80 para o Dokploy
 EXPOSE 80
+ENV PORT=80
 
-# Usamos o 'vite preview' para servir a aplicação na porta 80
-CMD ["bun", "x", "vite", "preview", "--port", "80", "--host"]
+# Comando para iniciar o servidor do TanStack Start
+CMD ["bun", ".output/server/index.mjs"]
