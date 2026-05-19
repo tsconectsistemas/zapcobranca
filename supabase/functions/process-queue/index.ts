@@ -7,6 +7,7 @@ const supabase = createClient(
 )
 
 const CRON_SECRET = Deno.env.get('CRON_SECRET') || 'W8ysOgBnzx3MEcUgmegn1Vik4rtNohp'
+console.log('Using CRON_SECRET:', CRON_SECRET)
 
 serve(async (req) => {
   const authHeader = req.headers.get('Authorization') || ''
