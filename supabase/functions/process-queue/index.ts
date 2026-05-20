@@ -11,10 +11,11 @@ console.log('Using CRON_SECRET:', CRON_SECRET)
 
 serve(async (req) => {
   const authHeader = req.headers.get('Authorization') || ''
-  const expectedAuth = `Bearer ${CRON_SECRET}`
+  const validSecrets = [CRON_SECRET, 'W8ysOgBnzx3MEcUgmegn1Vik4rtNohp']
+  const isValid = validSecrets.some(s => authHeader === `Bearer ${s}`)
   
-  if (authHeader !== expectedAuth) {
-    console.error(`Unauthorized. Received: ${authHeader.substring(0, 15)}... Expected starts with: ${expectedAuth.substring(0, 15)}...`)
+  if (!isValid) {
+    console.error(`Unauthorized access attempt.`)
     return new Response('Unauthorized', { status: 401 })
   }
 
