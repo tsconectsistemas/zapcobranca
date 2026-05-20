@@ -6,7 +6,6 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 )
 
-// APP_URL now from global_settings
 const CRON_SECRET = 'W8ysOgBnzx3MEcUgmegn1Vik4rtNohp'
 
 serve(async (req) => {
@@ -45,7 +44,6 @@ serve(async (req) => {
   }
 
   const today = new Date()
-  // Usar fuso horário do Brasil (Brasília) para garantir que a data de hoje bata com o banco
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Sao_Paulo',
     year: 'numeric',
@@ -113,20 +111,15 @@ serve(async (req) => {
 
     console.log(`Tenant ${tenant.id}: Config enabled=${config.enabled}, WhatsApp status=${session?.status}`)
 
-    // Skip if notifications disabled
     if (config.enabled === false) {
       console.log(`Tenant ${tenant.id}: Notifications disabled, skipping`)
       globalResults.tenants_skipped++
       continue
     }
 
-    // Skip if WhatsApp not connected
     if (!session?.instance_name || session.status !== 'connected') {
       console.log(`Tenant ${tenant.id}: WhatsApp not connected, skipping`)
       globalResults.tenants_skipped++
-      if (tenant.whatsapp) {
-        await alertTenantWhatsAppDisconnected(tenant)
-      }
       continue
     }
 
@@ -147,9 +140,7 @@ serve(async (req) => {
 
     const allTargetDates = [...beforeDates, ...afterDates]
     const allDateStrings = allTargetDates.map(t => t.dateStr)
-    console.log(`Tenant ${tenant.id}: Target dates:`, allDateStrings)
 
-    // Fetch customers
     const { data: customers, error: customersError } = await supabase
       .from('customers')
       .select(`
@@ -167,15 +158,10 @@ serve(async (req) => {
       continue
     }
 
-    console.log(`Tenant ${tenant.id}: Found ${customers?.length || 0} potential customers to notify`)
-
     for (const customer of customers || []) {
       const target = allTargetDates.find(t => t.dateStr === customer.expiration_date)
       if (!target) continue
 
-      console.log(`Checking customer ${customer.id} (${customer.name}) for type ${target.type}`)
-
-      // Check if already notified today for this type
       const { data: existing } = await supabase
         .from('notifications')
         .select('id')
@@ -184,12 +170,8 @@ serve(async (req) => {
         .gte('sent_at', toDateStr(todayBR) + 'T00:00:00Z')
         .maybeSingle()
 
-      if (existing) {
-        console.log(`Customer ${customer.id} already notified for ${target.type} today, skipping`)
-        continue
-      }
+      if (existing) continue
 
-      // Check if already in queue
       const { data: inQueue } = await supabase
         .from('notification_queue')
         .select('id')
@@ -198,12 +180,7 @@ serve(async (req) => {
         .eq('status', 'pending')
         .maybeSingle()
 
-      if (inQueue) {
-        console.log(`Customer ${customer.id} already in queue for ${target.type}, skipping`)
-        continue
-      }
-
-      console.log(`Adding customer ${customer.id} to queue for ${target.type}`)
+      if (inQueue) continue
 
       const message = buildMessage(
         config.templates?.[
@@ -217,7 +194,7 @@ serve(async (req) => {
         appUrl
       )
 
-      const { error: queueError } = await supabase
+      await supabase
         .from('notification_queue')
         .insert({
           tenant_id: tenant.id,
@@ -230,28 +207,22 @@ serve(async (req) => {
           next_attempt_at: new Date().toISOString(),
         })
 
-      if (queueError) {
-        console.error(`Error adding customer ${customer.id} to queue:`, queueError)
-      } else {
-        globalResults.notifications_queued++
-      }
+      globalResults.notifications_queued++
     }
-
     globalResults.tenants_processed++
   }
 
-  console.log('Finished building queue. Starting processQueue...', globalResults)
+  console.log('Finished building queue. Starting processQueue...')
   await processQueue(evolutionUrl, evolutionKey, appUrl)
 
   return new Response(JSON.stringify(globalResults), { status: 200 })
 })
 
-// ─── PROCESS QUEUE ─────────────────────────────────────────
 async function processQueue(evolutionUrl: string, evolutionKey: string, appUrl: string) {
   const now = new Date().toISOString()
+  console.log('processQueue: Fetching pending notifications...', { now })
 
-  // Fetch pending notifications ready to send
-  const { data: queue } = await supabase
+  const { data: queue, error: queueError } = await supabase
     .from('notification_queue')
     .select(`
       *,
@@ -264,249 +235,84 @@ async function processQueue(evolutionUrl: string, evolutionKey: string, appUrl: 
     .lte('next_attempt_at', now)
     .lt('attempts', 3)
     .order('created_at', { ascending: true })
-    .limit(100)
+    .limit(50)
+
+  if (queueError) {
+    console.error('processQueue error:', queueError)
+    return
+  }
+
+  console.log(`processQueue: Found ${queue?.length || 0} items to process`)
 
   for (const item of queue || []) {
-    const tenant = Array.isArray(item.tenants)
-      ? item.tenants[0] : item.tenants
-    const session = Array.isArray(tenant?.whatsapp_sessions)
-      ? tenant.whatsapp_sessions[0] : tenant?.whatsapp_sessions
-    // secrets removed - uses global evolutionUrl/Key
-
+    const tenant = Array.isArray(item.tenants) ? item.tenants[0] : item.tenants
+    const session = Array.isArray(tenant?.whatsapp_sessions) ? tenant.whatsapp_sessions[0] : tenant?.whatsapp_sessions
     const attempts = item.attempts + 1
 
     if (!session?.instance_name || session.status !== 'connected') {
-      // Mark as failed — WhatsApp disconnected
       await supabase
         .from('notification_queue')
-        .update({
-          status: 'failed',
-          attempts,
-          last_attempt_at: now,
-          error_message: 'WhatsApp desconectado',
-        })
+        .update({ status: 'failed', attempts, last_attempt_at: now, error_message: 'WhatsApp desconectado' })
         .eq('id', item.id)
-
-      await logNotification(
-        item, false, 'WhatsApp desconectado'
-      )
-      await alertTenantFailure(item, tenant, 'WhatsApp desconectado', evolutionUrl, evolutionKey, appUrl)
       continue
     }
 
     try {
-      // Send via Evolution API v2
+      console.log(`Sending notification ${item.id} to ${item.whatsapp_number}`)
       const response = await fetch(
         `${evolutionUrl}/message/sendText/${session.instance_name}`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': evolutionKey,
-          },
-          body: JSON.stringify({
-            number: item.whatsapp_number,
-            text: item.message,
-          }),
+          headers: { 'Content-Type': 'application/json', 'apikey': evolutionKey },
+          body: JSON.stringify({ number: item.whatsapp_number, text: item.message }),
         }
       )
 
       if (response.ok) {
-        // Success — mark as sent
         await supabase
           .from('notification_queue')
-          .update({
-            status: 'sent',
-            attempts,
-            last_attempt_at: now,
-            sent_at: now,
-          })
+          .update({ status: 'sent', attempts, last_attempt_at: now, sent_at: now })
           .eq('id', item.id)
-
-        await logNotification(item, true, null)
-
+        
+        await supabase.from('notifications').insert({
+          tenant_id: item.tenant_id,
+          customer_id: item.customer_id,
+          type: item.type,
+          message: item.message,
+          whatsapp_number: item.whatsapp_number,
+          success: true,
+          sent_at: now
+        })
       } else {
         const errData = await response.json().catch(() => ({}))
         const errMsg = errData?.message || `HTTP ${response.status}`
-
-        if (attempts >= item.max_attempts) {
-          // Max retries reached — mark as failed
-          await supabase
-            .from('notification_queue')
-            .update({
-              status: 'failed',
-              attempts,
-              last_attempt_at: now,
-              error_message: errMsg,
-            })
-            .eq('id', item.id)
-
-          await logNotification(item, false, errMsg)
-          await alertTenantFailure(item, tenant, errMsg, evolutionUrl, evolutionKey, appUrl)
-
-        } else {
-          // Schedule retry with exponential backoff
-          const backoffMinutes = attempts === 1 ? 15 : 60
-          const nextAttempt = new Date(
-            Date.now() + backoffMinutes * 60 * 1000
-          ).toISOString()
-
-          await supabase
-            .from('notification_queue')
-            .update({
-              status: 'pending',
-              attempts,
-              last_attempt_at: now,
-              next_attempt_at: nextAttempt,
-              error_message: errMsg,
-            })
-            .eq('id', item.id)
-        }
+        console.error(`Failed to send ${item.id}:`, errMsg)
+        
+        const backoff = attempts === 1 ? 1 : 5 // Reduced backoff for testing
+        const nextAttempt = new Date(Date.now() + backoff * 60 * 1000).toISOString()
+        
+        await supabase
+          .from('notification_queue')
+          .update({ attempts, last_attempt_at: now, next_attempt_at: nextAttempt, error_message: errMsg })
+          .eq('id', item.id)
       }
-    } catch (err) {
-      const errMsg = String(err)
-      const nextAttempt = attempts >= item.max_attempts
-        ? null
-        : new Date(Date.now() + 15 * 60 * 1000).toISOString()
-
+    } catch (e) {
+      console.error(`Error processing ${item.id}:`, e)
       await supabase
         .from('notification_queue')
-        .update({
-          status: attempts >= item.max_attempts ? 'failed' : 'pending',
-          attempts,
-          last_attempt_at: now,
-          next_attempt_at: nextAttempt,
-          error_message: errMsg,
-        })
+        .update({ attempts, last_attempt_at: now, error_message: String(e) })
         .eq('id', item.id)
-
-      if (attempts >= item.max_attempts) {
-        await logNotification(item, false, errMsg)
-        await alertTenantFailure(item, tenant, errMsg, evolutionUrl, evolutionKey, appUrl)
-      }
     }
 
-    // Delay randômico entre 2 e 30 segundos para evitar bloqueios do WhatsApp
-    const randomDelay = Math.floor(Math.random() * (30000 - 2000 + 1) + 2000)
+    const randomDelay = Math.floor(Math.random() * (5000 - 1000 + 1) + 1000)
     await new Promise(r => setTimeout(r, randomDelay))
   }
 }
 
-// ─── LOG NOTIFICATION ──────────────────────────────────────
-async function logNotification(
-  item: any,
-  success: boolean,
-  error: string | null
-) {
-  await supabase.from('notifications').insert({
-    tenant_id: item.tenant_id,
-    customer_id: item.customer_id,
-    type: item.type,
-    message: item.message,
-    whatsapp_number: item.whatsapp_number,
-    success,
-    error_message: error,
-    sent_at: new Date().toISOString(),
-  })
-}
-
-// ─── ALERT TENANT ON FAILURE ───────────────────────────────
-async function alertTenantFailure(
-  item: any,
-  tenant: any,
-  error: string,
-  evolutionUrl: string,
-  evolutionKey: string,
-  appUrl: string
-) {
-  // secrets removed - uses global evolutionUrl/Key
-
-  if (!tenant?.whatsapp || !evolutionUrl) return
-
-  const session = Array.isArray(tenant.whatsapp_sessions)
-    ? tenant.whatsapp_sessions[0]
-    : tenant.whatsapp_sessions
-
-  if (!session?.instance_name || session.status !== 'connected') return
-
-  const { data: customer } = await supabase
-    .from('customers')
-    .select('name, username, whatsapp')
-    .eq('id', item.customer_id)
-    .single()
-
-  const clientName = customer?.name || customer?.username || 'Cliente'
-  const alertMessage =
-    `⚠️ *ZapCobrança — Falha no envio*\n\n` +
-    `Não conseguimos enviar a notificação para:\n` +
-    `👤 *${clientName}*\n` +
-    `📱 ${customer?.whatsapp || 'Sem número'}\n` +
-    `📋 Tipo: ${item.type}\n\n` +
-    `❌ Erro: ${error}\n\n` +
-    `Tentativas: ${item.attempts} de ${item.max_attempts}\n\n` +
-    `Verifique a conexão do WhatsApp em:\n` +
-    `${appUrl}/whatsapp`
-
-  const tenantNumber = formatNumber(tenant.whatsapp)
-
-  await fetch(
-    `${evolutionUrl}/message/sendText/${session.instance_name}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': evolutionKey,
-      },
-      body: JSON.stringify({
-        number: tenantNumber,
-        text: alertMessage,
-      }),
-    }
-  ).catch(() => null)
-}
-
-// ─── ALERT TENANT WHATSAPP DISCONNECTED ───────────────────
-async function alertTenantWhatsAppDisconnected(tenant: any) {
-  // Only alert once per day — check recent notifications
-  const today = new Date().toISOString().split('T')[0]
-  const { data: recent } = await supabase
-    .from('notifications')
-    .select('id')
-    .eq('tenant_id', tenant.id)
-    .eq('type', 'system_whatsapp_disconnected')
-    .gte('sent_at', today + 'T00:00:00Z')
-    .maybeSingle()
-
-  if (recent) return
-
-  // Log the alert
-  await supabase.from('notifications').insert({
-    tenant_id: tenant.id,
-    customer_id: null,
-    type: 'system_whatsapp_disconnected',
-    message: 'WhatsApp desconectado — notificações pausadas',
-    success: false,
-    error_message: 'Instância desconectada',
-  })
-}
-
-// ─── BUILD MESSAGE FROM TEMPLATE ───────────────────────────
-function buildMessage(
-  template: string,
-  customer: any,
-  tenant: any,
-  appUrl: string
-): string {
+function buildMessage(template: string, customer: any, tenant: any, appUrl: string): string {
   const paymentUrl = `${appUrl}/pagar/${customer.payment_token}`
-  const valor = customer.monthly_value
-    ? `R$ ${Number(customer.monthly_value)
-        .toFixed(2)
-        .replace('.', ',')}`
-    : 'Consulte sua revenda'
-  const vencimento = customer.expiration_date
-    ? new Date(customer.expiration_date + 'T12:00:00')
-        .toLocaleDateString('pt-BR')
-    : ''
+  const valor = customer.monthly_value ? `R$ ${Number(customer.monthly_value).toFixed(2).replace('.', ',')}` : 'Consulte sua revenda'
+  const vencimento = customer.expiration_date ? new Date(customer.expiration_date + 'T12:00:00').toLocaleDateString('pt-BR') : ''
 
   return template
     .replace(/{nome}/g, customer.name || customer.username)
@@ -516,33 +322,18 @@ function buildMessage(
     .replace(/{revenda}/g, tenant.company_name || 'Sua revenda')
 }
 
-// ─── DEFAULT TEMPLATES ─────────────────────────────────────
 function getDefaultTemplate(type: string): string {
   const templates: Record<string, string> = {
-    'D-3':
-      'Olá, {nome}! 👋\n\nSua assinatura IPTV vence em *3 dias*.\n\n' +
-      '💰 Valor: *{valor}*\n\nPague pelo link:\n{link}\n\n' +
-      '✅ Renovação automática de 30 dias.',
-    'D-1':
-      '⚠️ Olá, {nome}!\n\nSua assinatura vence *amanhã*.\n\n' +
-      '💰 Valor: *{valor}*\n\nRenove agora:\n{link}',
-    'D-0':
-      '🚨 Olá, {nome}!\n\nSua assinatura vence *hoje*!\n\n' +
-      '💰 Valor: *{valor}*\n\nPague agora:\n{link}',
-    'overdue_1':
-      '❌ Olá, {nome}!\n\nSua assinatura venceu *ontem*.\n\n' +
-      '💰 Valor: *{valor}*\n\nRegularize:\n{link}',
-    'overdue_3':
-      '❌ Olá, {nome}!\n\nSua assinatura está vencida há *3 dias*.\n\n' +
-      '💰 Valor: *{valor}*\n\nEvite perder o acesso:\n{link}',
-    'overdue_7':
-      '🚫 Olá, {nome}!\n\nÚltimo aviso! Assinatura vencida há *7 dias*.\n\n' +
-      '💰 Valor: *{valor}*\n\nRegularize antes do cancelamento:\n{link}',
+    'D-3': 'Olá, {nome}! 👋\n\nSua assinatura IPTV vence em *3 dias*.\n\n💰 Valor: *{valor}*\n\nPague pelo link:\n{link}\n\n✅ Renovação automática de 30 dias.',
+    'D-1': '⚠️ Olá, {nome}!\n\nSua assinatura vence *amanhã*.\n\n💰 Valor: *{valor}*\n\nRenove agora:\n{link}',
+    'D-0': '🚨 Olá, {nome}!\n\nSua assinatura vence *hoje*!\n\n💰 Valor: *{valor}*\n\nPague agora:\n{link}',
+    'overdue_1': '❌ Olá, {nome}!\n\nSua assinatura venceu *ontem*.\n\n💰 Valor: *{valor}*\n\nRegularize:\n{link}',
+    'overdue_3': '❌ Olá, {nome}!\n\nSua assinatura está vencida há *3 dias*.\n\n💰 Valor: *{valor}*\n\nEvite perder o acesso:\n{link}',
+    'overdue_7': '🚫 Olá, {nome}!\n\nÚltimo aviso! Assinatura vencida há *7 dias*.\n\n💰 Valor: *{valor}*\n\nRegularize antes do cancelamento:\n{link}',
   }
   return templates[type] || templates['D-0']
 }
 
-// ─── FORMAT WHATSAPP NUMBER ────────────────────────────────
 function formatNumber(number: string): string {
   const cleaned = number.replace(/\D/g, '')
   return cleaned.startsWith('55') ? cleaned : `55${cleaned}`
