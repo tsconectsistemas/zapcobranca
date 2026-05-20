@@ -11,7 +11,10 @@ console.log('Using CRON_SECRET:', CRON_SECRET)
 
 serve(async (req) => {
   const authHeader = req.headers.get('Authorization') || ''
-  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+  const expectedAuth = `Bearer ${CRON_SECRET}`
+  
+  if (authHeader !== expectedAuth) {
+    console.error(`Unauthorized. Received: ${authHeader.substring(0, 15)}... Expected starts with: ${expectedAuth.substring(0, 15)}...`)
     return new Response('Unauthorized', { status: 401 })
   }
 
