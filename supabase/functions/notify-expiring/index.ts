@@ -241,13 +241,13 @@ serve(async (req) => {
   }
 
   console.log('Finished building queue. Starting processQueue...', globalResults)
-  await processQueue()
+  await processQueue(evolutionUrl, evolutionKey, appUrl)
 
   return new Response(JSON.stringify(globalResults), { status: 200 })
 })
 
 // ─── PROCESS QUEUE ─────────────────────────────────────────
-async function processQueue() {
+async function processQueue(evolutionUrl: string, evolutionKey: string, appUrl: string) {
   const now = new Date().toISOString()
 
   // Fetch pending notifications ready to send
@@ -290,7 +290,7 @@ async function processQueue() {
       await logNotification(
         item, false, 'WhatsApp desconectado'
       )
-      await alertTenantFailure(item, tenant, 'WhatsApp desconectado')
+      await alertTenantFailure(item, tenant, 'WhatsApp desconectado', evolutionUrl, evolutionKey, appUrl)
       continue
     }
 
@@ -342,7 +342,7 @@ async function processQueue() {
             .eq('id', item.id)
 
           await logNotification(item, false, errMsg)
-          await alertTenantFailure(item, tenant, errMsg)
+          await alertTenantFailure(item, tenant, errMsg, evolutionUrl, evolutionKey, appUrl)
 
         } else {
           // Schedule retry with exponential backoff
@@ -382,7 +382,7 @@ async function processQueue() {
 
       if (attempts >= item.max_attempts) {
         await logNotification(item, false, errMsg)
-        await alertTenantFailure(item, tenant, errMsg)
+        await alertTenantFailure(item, tenant, errMsg, evolutionUrl, evolutionKey, appUrl)
       }
     }
 
@@ -414,7 +414,10 @@ async function logNotification(
 async function alertTenantFailure(
   item: any,
   tenant: any,
-  error: string
+  error: string,
+  evolutionUrl: string,
+  evolutionKey: string,
+  appUrl: string
 ) {
   // secrets removed - uses global evolutionUrl/Key
 
