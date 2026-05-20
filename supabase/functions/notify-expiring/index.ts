@@ -11,7 +11,10 @@ const CRON_SECRET = 'W8ysOgBnzx3MEcUgmegn1Vik4rtNohp'
 serve(async (req) => {
   // Security check
   const authHeader = req.headers.get('Authorization') || ''
-  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+  const validSecrets = [CRON_SECRET, 'W8ysOgBnzx3MEcUgmegn1Vik4rtNohp']
+  const isValid = validSecrets.some(s => authHeader === `Bearer ${s}`)
+
+  if (!isValid) {
     console.error('Unauthorized access attempt')
     return new Response('Unauthorized', { status: 401 })
   }
