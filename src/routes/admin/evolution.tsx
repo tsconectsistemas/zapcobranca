@@ -191,27 +191,27 @@ function AdminEvolution() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>URL da Evolution API</Label>
+              <Label className="text-gray-300 font-semibold">URL da Evolution API</Label>
               <Input 
                 value={settings.evolution_api_url} 
                 onChange={e => setSettings({...settings, evolution_api_url: e.target.value})}
                 placeholder="https://evolution.seudominio.com"
-                className="bg-black/20 border-white/10"
+                className="bg-black/20 border-white/10 text-white placeholder:text-gray-600 focus:border-[#1D9E75]/50"
               />
               <p className="text-[10px] text-gray-500">Sem barra no final. Ex: https://evolution.seudominio.com</p>
             </div>
 
             <div className="space-y-2">
-              <Label>API Key Global</Label>
+              <Label className="text-gray-300 font-semibold">API Key Global</Label>
               <div className="relative">
                 <Input 
                   type={showKey ? "text" : "password"}
                   value={settings.evolution_api_key} 
                   onChange={e => setSettings({...settings, evolution_api_key: e.target.value})}
                   placeholder="Cole a AUTHENTICATION_API_KEY"
-                  className="bg-black/20 border-white/10 pr-10"
+                  className="bg-black/20 border-white/10 text-white placeholder:text-gray-600 focus:border-[#1D9E75]/50 pr-10"
                 />
-                <button type="button" onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                <button type="button" onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
                   {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
@@ -219,12 +219,12 @@ function AdminEvolution() {
             </div>
 
             <div className="space-y-2">
-              <Label>URL pública do sistema</Label>
+              <Label className="text-gray-300 font-semibold">URL pública do sistema</Label>
               <Input 
                 value={settings.app_url} 
                 onChange={e => setSettings({...settings, app_url: e.target.value})}
                 placeholder="https://zapcobranca.com.br"
-                className="bg-black/20 border-white/10"
+                className="bg-black/20 border-white/10 text-white placeholder:text-gray-600 focus:border-[#1D9E75]/50"
               />
               <p className="text-[10px] text-gray-500">Usada para gerar os links de pagamento enviados no WhatsApp</p>
             </div>
