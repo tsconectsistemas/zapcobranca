@@ -9,11 +9,6 @@ function createSupabaseClient() {
   const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    console.error('Missing Supabase environment variables:', { 
-      hasUrl: !!SUPABASE_URL, 
-      hasKey: !!SUPABASE_PUBLISHABLE_KEY,
-      isServer: typeof window === 'undefined'
-    });
     throw new Error(
       'Missing Supabase environment variables. Ensure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (or VITE_ prefixed versions) are set in your .env file.'
     );
