@@ -16,9 +16,5 @@ export default defineConfig({
       host: true,
       port: 3000,
     }
-  },
-  // @ts-ignore
-  nitro: {
-    preset: 'node-server'
   }
 });
