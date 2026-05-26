@@ -21,11 +21,14 @@ ENV VITE_APP_ENV=$VITE_APP_ENV
 RUN npm run build
 
 # Stage 2: Serve
-FROM nginx:alpine
-
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/.env ./.env
+RUN npm ci --omit=dev
+EXPOSE 3000
+ENV PORT=3000
+ENV HOST=0.0.0.0
+ENV NODE_ENV=production
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "3000"]
