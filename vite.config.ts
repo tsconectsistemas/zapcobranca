@@ -8,9 +8,13 @@ export default defineConfig({
       cssCodeSplit: true,
       sourcemap: false,
     },
-    // As configurações de server/preview aqui são para desenvolvimento local
     server: {
       host: true,
+      port: 3000,
     },
+    preview: {
+      host: true,
+      port: 3000,
+    }
   }
 });
