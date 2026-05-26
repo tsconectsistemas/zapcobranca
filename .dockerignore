@@ -1,8 +1,0 @@
-node_modules
-.output
-.tanstack
-dist
-.git
-Dockerfile
-.dockerignore
-README.md
