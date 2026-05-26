@@ -46,7 +46,7 @@ function AdminLayoutRoot() {
   if (isMobile) {
     return (
       <div className="min-h-screen bg-[#0F1117] flex flex-col items-center justify-center p-8 text-center">
-        <Logo size="lg" />
+        <Logo size="lg" dark={true} />
         <div className="mt-8 space-y-4">
           <Smartphone className="h-16 w-16 text-[#1D9E75] mx-auto" />
           <h1 className="text-xl font-bold text-white">Painel Desktop</h1>
@@ -90,7 +90,7 @@ function AdminLayout() {
       {/* Sidebar */}
       <aside className="w-60 bg-[#1A1D27] border-r border-white/5 flex flex-col fixed inset-y-0 z-50">
         <div className="p-6">
-          <Logo size="md" />
+          <Logo size="md" dark={true} />
           <div className="mt-4 inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-[#1D9E75]/10 border border-[#1D9E75]/20 text-[10px] font-bold text-[#1D9E75] uppercase tracking-wider">
             <Settings className="h-3 w-3" />
             Admin
