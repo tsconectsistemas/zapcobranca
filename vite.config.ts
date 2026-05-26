@@ -1,20 +1,21 @@
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig } from "vite";
+import react from "@vitejs/react-refresh";
+import path from "path";
+import { componentTagger } from "lovable-tagger";
 
-export default defineConfig({
-  vite: {
-    build: {
-      chunkSizeWarningLimit: 2000,
-      minify: 'esbuild',
-      cssCodeSplit: true,
-      sourcemap: false,
+export default defineConfig(({ mode }) => ({
+  server: {
+    host: "::",
+    port: 8080,
+  },
+  plugins: [
+    react(),
+    mode === 'development' &&
+    componentTagger(),
+  ].filter(Boolean),
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
     },
-    server: {
-      host: true,
-      port: 3000,
-    },
-    preview: {
-      host: true,
-      port: 3000,
-    }
-  }
-});
+  },
+}));
