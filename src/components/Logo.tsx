@@ -19,8 +19,7 @@ export function Logo({ showTagline = false, size = "md", dark = false }: LogoPro
       <div className="flex items-center gap-2">
         <Zap className={`${s.icon} ${dark ? "text-white fill-white" : "text-primary fill-primary"}`} />
         <span className={`${s.text} font-bold tracking-tight ${dark ? "text-white" : "text-foreground"}`}>
-          <span className={dark ? "text-white" : "text-foreground"}>Zap</span>
-          <span className="text-primary">Cobrança</span>
+          ZapCobrança
         </span>
       </div>
       {showTagline && (
