@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { tanstackBuildConfig } from "@tanstack/start-plugin/build";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
+import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { fileURLToPath } from "url";
 import path from "path";
+import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
