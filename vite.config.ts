@@ -6,5 +6,10 @@ export default defineConfig({
       host: "::",
       port: 8080,
     },
+    resolve: {
+      alias: {
+        "h3-v2": "h3",
+      },
+    },
   }
 });
