@@ -8,7 +8,7 @@ export default defineConfig({
       },
     },
     ssr: {
-      noExternal: true,
+      noExternal: [/^(?!react|react-dom|react\/jsx-runtime).*$/],
     },
     server: {
       host: "::",
