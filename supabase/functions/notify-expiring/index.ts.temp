@@ -1,0 +1,110 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+)
+
+const CRON_SECRET = 'W8ysOgBnzx3MEcUgmegn1Vik4rtNohp'
+
+serve(async (req) => {
+  // Security check
+  const authHeader = req.headers.get('Authorization') || ''
+  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  let targetTenantId: string | null = null
+  try {
+    const body = await req.json()
+    targetTenantId = body.tenantId || null
+  } catch (e) { }
+
+  // Read Global Settings
+  const { data: globalSettings } = await supabase
+    .from('global_settings')
+    .select('id, value')
+    .in('id', ['evolution_api_url', 'evolution_api_key', 'app_url'])
+
+  const settingsMap = Object.fromEntries((globalSettings || []).map((s: any) => [s.id, s.value]))
+  const evolutionUrl = settingsMap['evolution_api_url'] || ''
+  const evolutionKey = settingsMap['evolution_api_key'] || ''
+  const appUrl = settingsMap['app_url'] || 'https://zapcobranca.com.br'
+
+  if (!evolutionUrl || !evolutionKey) {
+    return new Response('Evolution API not configured in global settings', { status: 500 })
+  }
+
+  // Fetch tenants
+  let query = supabase
+    .from('tenants')
+    .select(`
+      id, company_name, whatsapp,
+      notification_config,
+      whatsapp_sessions ( instance_name, status )
+    `)
+    .eq('active', true)
+  
+  if (targetTenantId) query = query.eq('id', targetTenantId)
+
+  const { data: tenants, error: tenantsError } = await query
+  if (tenantsError) return new Response(JSON.stringify({ error: tenantsError.message }), { status: 500 })
+
+  const globalResults = { tenants_processed: 0, notifications_queued: 0, tenants_skipped: 0 }
+
+  for (const tenant of tenants || []) {
+    const config = tenant.notification_config || {}
+    const session = Array.isArray(tenant.whatsapp_sessions) ? tenant.whatsapp_sessions[0] : tenant.whatsapp_sessions
+
+    if (config.enabled === false || !session?.instance_name || session.status !== 'connected') {
+      globalResults.tenants_skipped++
+      continue
+    }
+
+    // Fetch customers for this tenant
+    const { data: customers } = await supabase
+      .from('customers')
+      .select('id, name, username, whatsapp, expiration_date, monthly_value')
+      .eq('tenant_id', tenant.id)
+      .eq('status', 'active')
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    for (const customer of customers || []) {
+      if (!customer.expiration_date) continue
+      
+      const expDate = new Date(customer.expiration_date)
+      expDate.setHours(0, 0, 0, 0)
+      
+      const diffDays = Math.round((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      
+      let templateKey = ''
+      if (config.before_expiration?.includes(diffDays)) templateKey = `d${diffDays}`
+      else if (config.after_expiration?.includes(Math.abs(diffDays))) templateKey = `overdue_${Math.abs(diffDays)}`
+
+      if (templateKey && config.templates?.[templateKey]) {
+        let message = config.templates[templateKey]
+          .replace('{nome}', customer.name || customer.username)
+          .replace('{valor}', `R$ ${customer.monthly_value?.toFixed(2) || '0,00'}`)
+          .replace('{vencimento}', customer.expiration_date)
+          .replace('{link}', `${appUrl}/pagar/${customer.id}`)
+          .replace('{revenda}', tenant.company_name)
+
+        await supabase.from('notification_queue').insert({
+          tenant_id: tenant.id,
+          customer_id: customer.id,
+          type: templateKey,
+          message,
+          whatsapp_number: customer.whatsapp?.replace(/\D/g, '') || '',
+          status: 'pending'
+        })
+        globalResults.notifications_queued++
+      }
+    }
+    globalResults.tenants_processed++
+  }
+
+  return new Response(JSON.stringify(globalResults), { status: 200 })
+})
